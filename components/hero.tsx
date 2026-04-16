@@ -22,9 +22,9 @@ export function Hero() {
   return (
     <section className="flex min-h-screen items-center justify-center px-4 py-20">
       <div className="mx-auto w-full max-w-2xl text-center">
-        {/* Logo / Brand */}
-        <div className="mb-12">
-          <span className="font-mono text-xs tracking-[0.3em] text-muted-foreground">
+        {/* Logo / Brand - Dominant */}
+        <div className="mb-8">
+          <span className="text-4xl font-black tracking-tight text-foreground md:text-5xl lg:text-6xl">
             CAVATAR
           </span>
         </div>
@@ -55,7 +55,7 @@ export function Hero() {
             type="submit"
             size="lg" 
             disabled={!plateNumber.trim()}
-            className="h-14 w-full rounded-lg bg-primary px-8 text-lg font-bold uppercase tracking-wide text-primary-foreground transition-all hover:brightness-110 disabled:opacity-40 md:h-16 md:text-xl"
+            className="h-14 w-full rounded-lg bg-primary px-8 text-lg font-black uppercase tracking-wide text-primary-foreground transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:opacity-40 md:h-16 md:text-xl"
           >
             Ver mensajes
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -73,7 +73,7 @@ export function Hero() {
             asChild
             variant="outline" 
             size="lg" 
-            className="h-12 rounded-lg border-2 border-primary bg-transparent px-8 font-bold uppercase tracking-wide text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+            className="h-12 rounded-lg border-2 border-primary bg-transparent px-8 font-black uppercase tracking-wide text-primary transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
           >
             <Link href="/send">
               Enviar mensaje
@@ -81,9 +81,9 @@ export function Hero() {
           </Button>
         </div>
 
-        {/* System status */}
+        {/* System status - green for active indicators */}
         <div className="mt-16 flex items-center justify-center gap-3 text-muted-foreground">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status" />
           <span className="font-mono text-xs uppercase tracking-widest">Sistema activo</span>
         </div>
       </div>

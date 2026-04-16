@@ -17,9 +17,9 @@ export function Footer() {
           </a>
         </div>
 
-        {/* Version */}
+        {/* Version - green for system status */}
         <div className="mt-10 flex items-center justify-center gap-3">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status" />
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             v1.0 Sistema activo
           </span>
