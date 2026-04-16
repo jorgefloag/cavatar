@@ -1,59 +1,51 @@
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Send, Inbox } from "lucide-react"
+import { Send, Inbox, ArrowRight } from "lucide-react"
 
 const features = [
   {
     icon: Send,
-    title: "Envia un mensaje",
-    description: "Introduce una placa y envia un mensaje directo a su buzon.",
+    title: "ENVÍA",
+    description: "Escribe a cualquier placa.",
     href: "/send",
   },
   {
     icon: Inbox,
-    title: "Recibe mensajes",
-    description: "Reclama tu placa y recibe notificaciones cuando alguien te escriba.",
+    title: "RECIBE",
+    description: "Reclama tu placa. Recibe mensajes.",
     href: "/inbox?focus=plate",
   },
 ]
 
 export function Features() {
   return (
-    <section className="px-4 py-16 md:py-24">
-      <div className="mx-auto max-w-5xl">
+    <section className="border-t border-border px-4 py-20 md:py-28">
+      <div className="mx-auto max-w-4xl">
         {/* Section header */}
-        <div className="mb-12 text-center">
-          <span className="font-mono text-xs tracking-[0.2em] text-muted-foreground">
-            // FUNCIONES
-          </span>
+        <div className="mb-16 text-center">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+            FUNCIONES
+          </h2>
         </div>
 
         {/* Feature cards */}
-        <div className="mx-auto grid max-w-2xl gap-6 md:grid-cols-2">
-          {features.map((feature, index) => (
+        <div className="mx-auto grid max-w-2xl gap-8 md:grid-cols-2">
+          {features.map((feature) => (
             <Link key={feature.title} href={feature.href} className="group">
-              <Card 
-                className="h-full cursor-pointer border-border bg-background transition-all duration-200 hover:border-foreground/30 hover:shadow-md group-active:scale-[0.98]"
-              >
-                <CardHeader className="pb-4">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center border border-border transition-colors group-hover:border-foreground/30">
-                      <feature.icon className="h-5 w-5 text-foreground" strokeWidth={1.5} />
-                    </div>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <CardTitle className="font-sans text-lg font-medium">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="flex h-full flex-col border-2 border-border bg-card p-8 transition-all duration-200 hover:border-primary">
+                <div className="mb-6 flex h-14 w-14 items-center justify-center border-2 border-primary bg-transparent">
+                  <feature.icon className="h-6 w-6 text-primary" strokeWidth={2} />
+                </div>
+                <h3 className="mb-2 text-2xl font-black uppercase tracking-tight text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="mb-6 flex-1 text-muted-foreground">
+                  {feature.description}
+                </p>
+                <div className="flex items-center gap-2 font-mono text-sm uppercase text-primary transition-all group-hover:gap-3">
+                  <span>Ir</span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </div>
             </Link>
           ))}
         </div>

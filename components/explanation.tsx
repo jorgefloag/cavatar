@@ -1,23 +1,18 @@
 export function Explanation() {
   return (
-    <section className="border-y border-border bg-secondary/30 px-4 py-12 md:py-16">
-      <div className="mx-auto max-w-2xl">
-        <div className="relative border border-border bg-background p-6 md:p-8">
-          {/* Corner decorations - retro terminal style */}
-          <span className="absolute left-2 top-2 font-mono text-[10px] text-muted-foreground">
-            [INFO]
-          </span>
-          
-          <p className="text-balance pt-4 text-center text-lg leading-relaxed text-foreground md:text-xl">
-            Cavatar convierte cada placa vehicular en un buzón digital al que cualquier persona puede enviar un mensaje.
-          </p>
-          
-          <div className="mt-6 flex justify-center">
-            <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
-              <span className="inline-block h-1 w-1 bg-muted-foreground" />
-              <span className="inline-block h-1 w-1 bg-muted-foreground" />
-              <span className="inline-block h-1 w-1 bg-muted-foreground" />
-            </div>
+    <section className="border-y border-border bg-secondary px-4 py-20 md:py-28">
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="text-balance text-2xl font-bold leading-tight text-foreground md:text-3xl lg:text-4xl">
+          Cada placa es un buzón.
+          <br />
+          <span className="text-primary">Cualquier persona puede escribirte.</span>
+        </p>
+        
+        <div className="mt-10 flex justify-center">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            <span className="inline-block h-px w-8 bg-border" />
+            <span>Info</span>
+            <span className="inline-block h-px w-8 bg-border" />
           </div>
         </div>
       </div>

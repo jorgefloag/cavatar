@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { Roboto, Roboto_Mono } from 'next/font/google'
+import { Inter, Roboto_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const roboto = Roboto({ 
+const inter = Inter({ 
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-roboto"
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter"
 });
 const robotoMono = Roboto_Mono({ 
   subsets: ["latin"],
@@ -42,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es">
-      <body className={`${roboto.variable} ${robotoMono.variable} font-sans antialiased`}>
+    <html lang="es" className="bg-background">
+      <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased bg-background text-foreground`}>
         {children}
         <Analytics />
       </body>
