@@ -4,8 +4,9 @@ export function Explanation() {
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-balance text-2xl font-bold leading-tight text-foreground md:text-3xl lg:text-4xl">
           Cada placa es un buzón.
-          <br />
-          <span className="text-primary">Cualquier persona puede escribirte.</span>
+        </p>
+        <p className="mt-4 text-balance text-2xl font-bold leading-tight md:text-3xl lg:text-4xl">
+          <span className="text-primary">Cualquier persona puede escribirle a tu vehículo. Y tú puedes escribirle a cualquier vehículo.</span>
         </p>
         
         <div className="mt-10 flex justify-center">
