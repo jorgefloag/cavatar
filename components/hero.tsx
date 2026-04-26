@@ -35,7 +35,7 @@ export function Hero() {
             ALGUIEN TE ESCRIBIÓ
           </h1>
           <p className="text-lg font-medium text-muted-foreground md:text-xl">
-            Ingresa tu placa para verlo
+            Ingresa tu placa para leer tus mensajes
           </p>
         </div>
 
@@ -62,21 +62,25 @@ export function Hero() {
           </Button>
         </form>
 
-        {/* Mysterious tagline */}
+        {/* Tagline */}
         <p className="mb-10 font-mono text-sm text-muted-foreground">
-          No sabes quién. Pero te escribió.
+          Tienes una nueva alerta, un nuevo saludo, o un nuevo recado
         </p>
 
-        {/* Secondary Action */}
-        <div className="border-t border-border pt-8">
+        {/* Send Message Action - Equal visual prominence */}
+        <div className="border-t border-border py-10">
+          <p className="mb-4 text-lg font-medium text-muted-foreground">
+            O envía un mensaje a otra placa
+          </p>
           <Button 
             asChild
             variant="outline" 
             size="lg" 
-            className="h-12 rounded-lg border-2 border-primary bg-transparent px-8 font-black uppercase tracking-wide text-primary transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
+            className="h-14 w-full rounded-lg border-2 border-primary bg-transparent px-8 text-lg font-black uppercase tracking-wide text-primary transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98] md:h-16 md:text-xl"
           >
             <Link href="/send">
               Enviar mensaje
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
         </div>
