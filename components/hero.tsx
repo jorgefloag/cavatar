@@ -20,18 +20,18 @@ export function Hero() {
   }
 
   return (
-    <section className="flex min-h-screen items-center justify-center px-4 py-20">
+    <section className="flex min-h-screen items-center justify-center overflow-x-hidden px-6 py-20">
       <div className="mx-auto w-full max-w-2xl text-center">
         {/* Logo / Brand - Primary visual element */}
         <div className="mb-6">
-          <span className="text-7xl font-black tracking-tight text-foreground md:text-8xl lg:text-9xl">
+          <span className="block text-5xl font-black tracking-tight text-foreground sm:text-6xl md:text-8xl lg:text-9xl">
             CAVATAR
           </span>
         </div>
 
         {/* Headlines - Bold, secondary prominence */}
         <div className="mb-10">
-          <h1 className="mb-4 text-4xl font-black uppercase leading-[0.9] tracking-tight text-foreground md:text-5xl lg:text-6xl">
+          <h1 className="mb-4 text-2xl font-black uppercase leading-[0.9] tracking-tight text-foreground sm:text-3xl md:text-5xl lg:text-6xl">
             ALGUIEN TE ESCRIBIÓ
           </h1>
           <p className="text-lg font-medium text-muted-foreground md:text-xl">
