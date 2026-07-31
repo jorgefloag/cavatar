@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSignIn } from "@clerk/nextjs/legacy"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +13,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get("returnTo")
+  const { isLoaded, signIn, setActive } = useSignIn()
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [email, setEmail] = useState("")
@@ -19,26 +21,22 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Login form submitted")
+    if (!isLoaded) return
     setIsLoading(true)
     setErrorMessage("")
 
-    console.log("[v0] Attempting to login user:", { email })
-
-    // Note: Supabase integration required for actual authentication
-    // For now, simulate login by storing in localStorage
     try {
-      // Store user email in localStorage to simulate auth
-      localStorage.setItem("cavatar_verified_user", JSON.stringify({ email }))
-      console.log("[v0] User logged in successfully (simulated)")
-      
-      // Redirect to returnTo URL or dashboard
-      const redirectUrl = returnTo || "/verified/dashboard"
-      console.log("[v0] Redirecting to:", redirectUrl)
-      router.push(redirectUrl)
+      const result = await signIn.create({ identifier: email, password })
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId })
+        router.push(returnTo || "/verified/dashboard")
+      } else {
+        setErrorMessage("No se pudo iniciar sesión. Intenta nuevamente.")
+      }
     } catch (error) {
-      console.error("[v0] Login error:", error)
-      setErrorMessage("Error al iniciar sesión. Intenta nuevamente.")
+      console.error("[verified/login] Login error:", error)
+      setErrorMessage("Correo o contraseña incorrectos.")
     } finally {
       setIsLoading(false)
     }

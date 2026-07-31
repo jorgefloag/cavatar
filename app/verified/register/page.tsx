@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSignUp } from "@clerk/nextjs/legacy"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,41 +13,56 @@ function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get("returnTo")
+  const { isLoaded, signUp, setActive } = useSignUp()
+  const [step, setStep] = useState<"form" | "verify">("form")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [code, setCode] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Register form submitted")
+    if (!isLoaded) return
     setIsLoading(true)
     setErrorMessage("")
 
-    // Validate password length
-    if (password.length < 6) {
-      setErrorMessage("La contraseña debe tener al menos 6 caracteres.")
+    if (password.length < 8) {
+      setErrorMessage("La contraseña debe tener al menos 8 caracteres.")
       setIsLoading(false)
       return
     }
 
-    console.log("[v0] Attempting to register user:", { email })
-
-    // Note: Supabase integration required for actual registration
-    // For now, simulate registration by storing in localStorage
     try {
-      // Store user email in localStorage to simulate auth
-      localStorage.setItem("cavatar_verified_user", JSON.stringify({ email }))
-      console.log("[v0] User registered successfully (simulated)")
-      
-      // Redirect to returnTo URL or request page
-      // Note: New users go to request page first to verify, then can return
-      const redirectUrl = returnTo || "/verified/request"
-      console.log("[v0] Redirecting to:", redirectUrl)
-      router.push(redirectUrl)
+      await signUp.create({ emailAddress: email, password })
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      setStep("verify")
     } catch (error) {
-      console.error("[v0] Registration error:", error)
+      console.error("[verified/register] Registration error:", error)
       setErrorMessage("Error al crear la cuenta. Intenta nuevamente.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isLoaded) return
+    setIsLoading(true)
+    setErrorMessage("")
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({ code })
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId })
+        router.push(returnTo || "/verified/request")
+      } else {
+        setErrorMessage("Código inválido. Intenta nuevamente.")
+      }
+    } catch (error) {
+      console.error("[verified/register] Verification error:", error)
+      setErrorMessage("Código inválido. Intenta nuevamente.")
     } finally {
       setIsLoading(false)
     }
@@ -67,67 +83,105 @@ function RegisterForm() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
-            Crear cuenta
+            {step === "form" ? "Crear cuenta" : "Verifica tu correo"}
           </h1>
           <p className="text-muted-foreground">
-            Crea una cuenta para solicitar un perfil verificado.
+            {step === "form"
+              ? "Crea una cuenta para solicitar un perfil verificado."
+              : `Ingresa el código que enviamos a ${email}.`}
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <FieldGroup className="gap-6">
-            <Field>
-              <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                required
-                className="h-12 rounded-lg text-base"
-              />
-            </Field>
+        {step === "form" ? (
+          <form onSubmit={handleSubmit}>
+            <FieldGroup className="gap-6">
+              <Field>
+                <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  required
+                  className="h-12 rounded-lg text-base"
+                />
+              </Field>
 
-            <Field>
-              <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                required
-                className="h-12 rounded-lg text-base"
-              />
-            </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  required
+                  className="h-12 rounded-lg text-base"
+                />
+              </Field>
 
-            {errorMessage && (
-              <p className="text-center text-sm text-red-500">{errorMessage}</p>
-            )}
+              {errorMessage && (
+                <p className="text-center text-sm text-red-500">{errorMessage}</p>
+              )}
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isLoading}
-              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
-            >
-              {isLoading ? "Creando cuenta..." : "Crear cuenta"}
-            </Button>
-          </FieldGroup>
-        </form>
+              <div id="clerk-captcha" />
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isLoading}
+                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              >
+                {isLoading ? "Creando cuenta..." : "Crear cuenta"}
+              </Button>
+            </FieldGroup>
+          </form>
+        ) : (
+          <form onSubmit={handleVerify}>
+            <FieldGroup className="gap-6">
+              <Field>
+                <FieldLabel htmlFor="code">Código de verificación</FieldLabel>
+                <Input
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                  required
+                  className="h-12 rounded-lg text-base"
+                />
+              </Field>
+
+              {errorMessage && (
+                <p className="text-center text-sm text-red-500">{errorMessage}</p>
+              )}
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isLoading}
+                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              >
+                {isLoading ? "Verificando..." : "Verificar código"}
+              </Button>
+            </FieldGroup>
+          </form>
+        )}
 
         {/* Login link */}
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          ¿Ya tienes cuenta?{" "}
-          <Link
-            href={returnTo ? `/verified/login?returnTo=${encodeURIComponent(returnTo)}` : "/verified/login"}
-            className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
-          >
-            Iniciar sesión
-          </Link>
-        </p>
+        {step === "form" && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            ¿Ya tienes cuenta?{" "}
+            <Link
+              href={returnTo ? `/verified/login?returnTo=${encodeURIComponent(returnTo)}` : "/verified/login"}
+              className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
+            >
+              Iniciar sesión
+            </Link>
+          </p>
+        )}
       </div>
     </main>
   )

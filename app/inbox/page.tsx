@@ -8,27 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@supabase/supabase-js"
+import { lookupPlate, setupPlatePassword, verifyPlatePassword, type MessageDTO } from "./actions"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-interface Message {
-  id: string
-  alias: string
-  mensaje: string
-  contacto: string
-  fecha: string
-  plate_number: string
-}
+type Message = MessageDTO
 
 // Step 1: plate_input -> Step 2: no_claim | pending | setup_password | enter_password -> inbox
 type PageState = "plate_input" | "loading" | "no_claim" | "pending" | "setup_password" | "enter_password" | "wrong_password" | "password_saved" | "inbox"
-
-const BLOCK_DURATION_MS = 5 * 60 * 1000 // 5 minutes
-const MAX_FAILED_ATTEMPTS = 5
 
 function InboxContent() {
   const searchParams = useSearchParams()
@@ -42,12 +27,10 @@ function InboxContent() {
   const [currentPlate, setCurrentPlate] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // Brute force protection state
-  const [failedAttempts, setFailedAttempts] = useState(0)
-  const [blockedUntil, setBlockedUntil] = useState<number | null>(null)
 
-  const isBlocked = blockedUntil !== null && Date.now() < blockedUntil
+  // Brute force protection state — real enforcement lives server-side (app/inbox/actions.ts);
+  // this is only a UI mirror of the last server response.
+  const [isBlocked, setIsBlocked] = useState(false)
 
   // Auto-focus plate input when navigating from features card
   useEffect(() => {
@@ -62,48 +45,20 @@ function InboxContent() {
     if (plateParam && pageState === "plate_input") {
       const plate = plateParam.trim().toUpperCase()
       setPlateNumber(plate)
-      // Trigger the lookup after setting the plate
-      const lookupPlate = async () => {
+      const runLookup = async () => {
         setIsSubmitting(true)
         setCurrentPlate(plate)
-
         try {
-          const { data: claimData, error: claimError } = await supabase
-            .from("claim_requests")
-            .select("*")
-            .eq("plate_number", plate)
-            .single()
-
-          if (claimError || !claimData) {
-            setPageState("no_claim")
-            return
-          }
-
-          if (claimData.status === "pending") {
-            setPageState("pending")
-            return
-          }
-
-          if (claimData.status === "approved") {
-            const hasPassword = claimData.access_password && claimData.access_password.trim() !== ""
-            
-            if (!hasPassword) {
-              setPageState("setup_password")
-            } else {
-              setPageState("enter_password")
-            }
-            return
-          }
-
-          setPageState("no_claim")
+          const result = await lookupPlate(plate)
+          setPageState(result.state)
         } catch (error) {
-          console.error("[v0] Error in auto plate lookup:", error)
+          console.error("[inbox] Error in auto plate lookup:", error)
           setPageState("no_claim")
         } finally {
           setIsSubmitting(false)
         }
       }
-      lookupPlate()
+      runLookup()
     }
   }, [searchParams, pageState])
 
@@ -116,50 +71,11 @@ function InboxContent() {
     setIsSubmitting(true)
     setCurrentPlate(plate)
 
-    console.log("[v0] Step 1: Looking up plate:", plate)
-
     try {
-      const { data: claimData, error: claimError } = await supabase
-        .from("claim_requests")
-        .select("*")
-        .eq("plate_number", plate)
-        .single()
-
-      console.log("[v0] Supabase response:", { claimData, claimError })
-
-      if (claimError || !claimData) {
-        console.log("[v0] -> State: no_claim")
-        setPageState("no_claim")
-        return
-      }
-
-      console.log("[v0] Status:", claimData.status)
-      console.log("[v0] access_password exists:", !!claimData.access_password)
-
-      if (claimData.status === "pending") {
-        console.log("[v0] -> State: pending")
-        setPageState("pending")
-        return
-      }
-
-      if (claimData.status === "approved") {
-        const hasPassword = claimData.access_password && claimData.access_password.trim() !== ""
-        
-        if (!hasPassword) {
-          console.log("[v0] -> State: setup_password")
-          setPageState("setup_password")
-        } else {
-          console.log("[v0] -> State: enter_password")
-          setPageState("enter_password")
-        }
-        return
-      }
-
-      // Default to no_claim for any other status
-      console.log("[v0] -> State: no_claim (fallback)")
-      setPageState("no_claim")
+      const result = await lookupPlate(plate)
+      setPageState(result.state)
     } catch (error) {
-      console.error("[v0] Error in handlePlateLookup:", error)
+      console.error("[inbox] Error in handlePlateLookup:", error)
       setPageState("no_claim")
     } finally {
       setIsSubmitting(false)
@@ -169,62 +85,25 @@ function InboxContent() {
   // Step 2b: Verify password for existing users
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!password.trim()) return
-
-    // Check if currently blocked
-    if (blockedUntil !== null && Date.now() < blockedUntil) {
-      console.log("[v0] Still blocked, ignoring attempt")
-      return
-    }
-
-    // If block has expired, reset
-    if (blockedUntil !== null && Date.now() >= blockedUntil) {
-      console.log("[v0] Block expired, resetting attempts")
-      setBlockedUntil(null)
-      setFailedAttempts(0)
-    }
+    if (!password.trim() || isBlocked) return
 
     setIsSubmitting(true)
 
-    console.log("[v0] Verifying password for plate:", currentPlate)
-    console.log("[v0] Current failedAttempts:", failedAttempts)
-
     try {
-      const { data: claimData, error: claimError } = await supabase
-        .from("claim_requests")
-        .select("access_password")
-        .eq("plate_number", currentPlate)
-        .single()
+      const result = await verifyPlatePassword(currentPlate, password)
 
-      if (claimError || !claimData) {
-        console.log("[v0] Error fetching password")
-        setPageState("no_claim")
-        return
-      }
-
-      const passwordMatch = password === claimData.access_password
-      console.log("[v0] Password match:", passwordMatch)
-
-      if (passwordMatch) {
-        // Reset failed attempts on success
-        setFailedAttempts(0)
-        setBlockedUntil(null)
-        await fetchMessagesAndShowInbox()
+      if (result.success) {
+        setIsBlocked(false)
+        setMessages(result.messages || [])
+        setPageState("inbox")
+      } else if (result.locked) {
+        setIsBlocked(true)
+        setPageState("wrong_password")
       } else {
-        const newFailedAttempts = failedAttempts + 1
-        console.log("[v0] Failed attempt #" + newFailedAttempts)
-        setFailedAttempts(newFailedAttempts)
-
-        if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
-          const blockUntilTime = Date.now() + BLOCK_DURATION_MS
-          console.log("[v0] Blocking started until:", new Date(blockUntilTime).toISOString())
-          setBlockedUntil(blockUntilTime)
-        }
-
         setPageState("wrong_password")
       }
     } catch (error) {
-      console.error("[v0] Error in handlePasswordLogin:", error)
+      console.error("[inbox] Error in handlePasswordLogin:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -247,67 +126,34 @@ function InboxContent() {
 
     setIsSubmitting(true)
 
-    console.log("[v0] Setting up password for plate:", currentPlate)
-
     try {
-      const { error } = await supabase
-        .from("claim_requests")
-        .update({ access_password: newPassword })
-        .eq("plate_number", currentPlate)
+      const result = await setupPlatePassword(currentPlate, newPassword)
 
-      if (error) {
-        console.error("[v0] Error saving password:", error)
-        setSetupError("Error al guardar la clave. Intenta de nuevo.")
+      if (!result.success) {
+        setSetupError(result.error || "Error al guardar la clave. Intenta de nuevo.")
         return
       }
 
-      console.log("[v0] Password saved successfully")
       setPageState("password_saved")
     } catch (error) {
-      console.error("[v0] Error in handleSetupPassword:", error)
+      console.error("[inbox] Error in handleSetupPassword:", error)
       setSetupError("Error al guardar la clave. Intenta de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const fetchMessagesAndShowInbox = async () => {
-    console.log("[v0] Fetching messages for plate:", currentPlate)
-
-    try {
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("plate_number", currentPlate)
-        .order("created_at", { ascending: false })
-
-      console.log("[v0] Messages response:", { messagesData, messagesError })
-
-      const formattedMessages: Message[] = (messagesData || []).map((msg: Record<string, unknown>) => ({
-        id: String(msg.id),
-        alias: String(msg.alias || "Anónimo"),
-        mensaje: String(msg.mensaje || msg.message || ""),
-        contacto: String(msg.contacto || msg.contact || ""),
-        fecha: new Date(String(msg.created_at)).toLocaleDateString("es-MX", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-        plate_number: String(msg.plate_number),
-      }))
-
-      setMessages(formattedMessages)
-      console.log("[v0] -> State: inbox")
-      setPageState("inbox")
-    } catch (error) {
-      console.error("[v0] Error fetching messages:", error)
-    }
-  }
-
   const handleContinueToInbox = async () => {
     setIsSubmitting(true)
-    await fetchMessagesAndShowInbox()
-    setIsSubmitting(false)
+    try {
+      const result = await verifyPlatePassword(currentPlate, newPassword)
+      setMessages(result.messages || [])
+      setPageState("inbox")
+    } catch (error) {
+      console.error("[inbox] Error loading inbox after setup:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
@@ -318,6 +164,7 @@ function InboxContent() {
     setSetupError("")
     setCurrentPlate("")
     setMessages([])
+    setIsBlocked(false)
     setPageState("plate_input")
   }
 

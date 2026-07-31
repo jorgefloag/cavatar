@@ -2,39 +2,33 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { submitClaim } from "./actions"
 import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { submitVerifiedRequest } from "./actions"
 
-export default function ClaimPage() {
+export function RequestForm({ userEmail }: { userEmail: string }) {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
-  const [plateNumber, setPlateNumber] = useState("")
-  const [email, setEmail] = useState("")
-  const [vehicleBrand, setVehicleBrand] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [useCase, setUseCase] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setErrorMessage("")
 
-    const result = await submitClaim({
-      plateNumber,
-      email,
-      vehicleBrand,
-    })
+    const result = await submitVerifiedRequest({ fullName, phone, useCase })
 
     setIsLoading(false)
 
     if (!result.success) {
-      setErrorMessage(result.error || "Error al enviar la solicitud.")
+      setErrorMessage(result.error || "Error al enviar la solicitud. Intenta nuevamente.")
     } else {
-      setPlateNumber("")
-      setEmail("")
-      setVehicleBrand("")
       setIsSubmitted(true)
     }
   }
@@ -50,17 +44,14 @@ export default function ClaimPage() {
             Tu solicitud fue enviada correctamente.
           </h1>
           <p className="mb-8 text-muted-foreground">
-            Revisaremos tu solicitud y te contactaremos pronto.
+            Revisaremos tu solicitud y te notificaremos cuando sea aprobada.
           </p>
           <Button
             asChild
             variant="ghost"
             className="rounded-full border border-border px-6 py-5 text-muted-foreground transition-all hover:border-foreground hover:text-foreground"
           >
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al inicio
-            </Link>
+            <Link href="/verified/dashboard">Ver estado de solicitud</Link>
           </Button>
         </div>
       </main>
@@ -70,38 +61,35 @@ export default function ClaimPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-12 md:py-20">
       <div className="mx-auto max-w-md">
-        {/* Back link */}
         <Link
-          href="/"
+          href="/verified"
           className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver
         </Link>
 
-        {/* Header */}
         <div className="mb-10">
           <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
-            Reclamar placa
+            Solicitar perfil verificado
           </h1>
           <p className="text-muted-foreground">
-            Completa el formulario para reclamar tu placa.
+            Completa el formulario para solicitar acceso a un perfil verificado.
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
           <FieldGroup className="gap-6">
             <Field>
-              <FieldLabel htmlFor="plate">Número de placa</FieldLabel>
+              <FieldLabel htmlFor="fullName">Nombre completo</FieldLabel>
               <Input
-                id="plate"
+                id="fullName"
                 type="text"
-                value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
-                placeholder="ABC-123"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Tu nombre completo"
                 required
-                className="h-12 rounded-lg font-mono text-base uppercase tracking-wider"
+                className="h-12 rounded-lg text-base"
               />
             </Field>
 
@@ -110,24 +98,35 @@ export default function ClaimPage() {
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
+                value={userEmail}
+                disabled
+                className="h-12 rounded-lg text-base disabled:opacity-70"
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="phone">Teléfono</FieldLabel>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+52 55 1234 5678"
                 required
                 className="h-12 rounded-lg text-base"
               />
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="vehicleBrand">Marca del vehículo</FieldLabel>
-              <Input
-                id="vehicleBrand"
-                type="text"
-                value={vehicleBrand}
-                onChange={(e) => setVehicleBrand(e.target.value)}
-                placeholder="Toyota, Honda, Ford..."
+              <FieldLabel htmlFor="useCase">Uso previsto</FieldLabel>
+              <Textarea
+                id="useCase"
+                value={useCase}
+                onChange={(e) => setUseCase(e.target.value)}
+                placeholder="Describe cómo planeas usar el perfil verificado..."
                 required
-                className="h-12 rounded-lg text-base"
+                rows={4}
+                className="rounded-lg text-base"
               />
             </Field>
 

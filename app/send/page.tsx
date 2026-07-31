@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { submitMessage, checkVerifiedStatus } from "./actions"
 import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -120,64 +115,13 @@ export default function SendPage() {
     setRemainingMessages(remaining)
   }, [isVerifiedUser])
 
-  // Check if user is verified on mount
+  // Check if user is verified on mount (identity resolved server-side via Clerk, never trusted from the client)
   useEffect(() => {
-    const checkVerificationStatus = async () => {
-      console.log("[v0] Checking verification status...")
-      
-      // Get user email from localStorage
-      const storedUser = localStorage.getItem("cavatar_verified_user")
-      
-      if (!storedUser) {
-        console.log("[v0] No logged-in user found in localStorage")
-        console.log("[v0] User treated as: normal (not verified)")
-        setIsVerifiedUser(false)
-        setIsCheckingVerification(false)
-        return
-      }
-
-      const user = JSON.parse(storedUser)
-      const email = user.email || null
+    checkVerifiedStatus().then(({ verified, email }) => {
       setUserEmail(email)
-      console.log("[v0] Logged-in user email:", email)
-
-      if (!email) {
-        console.log("[v0] No email found for user")
-        console.log("[v0] User treated as: normal (not verified)")
-        setIsVerifiedUser(false)
-        setIsCheckingVerification(false)
-        return
-      }
-
-      // Query verified_requests table for approved status
-      console.log("[v0] Querying verified_requests for email:", email)
-      
-      const { data, error } = await supabase
-        .from("verified_requests")
-        .select("*")
-        .eq("user_email", email)
-        .eq("status", "approved")
-        .single()
-
-      console.log("[v0] Query result from verified_requests:", data)
-      if (error) {
-        console.log("[v0] Query error:", error.message)
-      }
-
-      if (data && !error) {
-        console.log("[v0] Found approved record for user")
-        console.log("[v0] User treated as: VERIFIED (unlimited messages)")
-        setIsVerifiedUser(true)
-      } else {
-        console.log("[v0] No approved record found")
-        console.log("[v0] User treated as: normal (3 messages/hour limit)")
-        setIsVerifiedUser(false)
-      }
-
+      setIsVerifiedUser(verified)
       setIsCheckingVerification(false)
-    }
-
-    checkVerificationStatus()
+    })
   }, [])
 
   useEffect(() => {
@@ -203,35 +147,24 @@ export default function SendPage() {
     setIsLoading(true)
     setErrorMessage("")
 
-    console.log("[v0] Submitting message, user is verified:", isVerifiedUser)
-
-    // Insert message to Supabase
-    const { error } = await supabase.from("messages").insert([
-      {
-        plate_number: plateNumber,
-        alias: name,
-        message: message,
-        contact: contact,
-      },
-    ])
+    const result = await submitMessage({
+      plateNumber,
+      name: name || undefined,
+      message,
+      contact: contact || undefined,
+    })
 
     setIsLoading(false)
 
-    if (error) {
-      console.log("[v0] Error inserting message:", error.message)
-      setErrorMessage("Error al enviar mensaje. Intenta nuevamente.")
+    if (!result.success) {
+      setErrorMessage(result.error || "Error al enviar mensaje. Intenta nuevamente.")
     } else {
-      console.log("[v0] Message sent successfully")
-      
       // Only record timestamp for rate limiting if user is NOT verified
       if (!isVerifiedUser) {
-        console.log("[v0] Recording timestamp for non-verified user")
         saveTimestamp()
         updateSpamStatus()
-      } else {
-        console.log("[v0] Skipping timestamp for verified user (unlimited messages)")
       }
-      
+
       setPlateNumber("")
       setName("")
       setMessage("")

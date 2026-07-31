@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Roboto_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
 const inter = Inter({ 
@@ -42,11 +43,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="bg-background">
-      <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased bg-background text-foreground`}>
-        {children}
-        <Analytics />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="es" className="bg-background">
+        <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased bg-background text-foreground`}>
+          {children}
+          <Analytics />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
