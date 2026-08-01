@@ -1,6 +1,6 @@
 import { pgTable, pgEnum, uuid, text, integer, timestamp, unique } from "drizzle-orm/pg-core"
 
-export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved"])
+export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved", "rejected"])
 export const verifiedStatusEnum = pgEnum("verified_status", ["pending", "approved", "rejected"])
 
 export const claimRequests = pgTable(
@@ -14,6 +14,7 @@ export const claimRequests = pgTable(
     passwordHash: text("password_hash"),
     failedAttempts: integer("failed_attempts").notNull().default(0),
     lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.plateNumber)],
@@ -37,6 +38,7 @@ export const verifiedRequests = pgTable(
     phone: text("phone").notNull(),
     useCase: text("use_case").notNull(),
     status: verifiedStatusEnum("status").notNull().default("pending"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.userEmail)],

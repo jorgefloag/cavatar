@@ -1,5 +1,6 @@
 "use server"
 
+import { eq, ne } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { claimRequests } from "@/lib/db/schema"
@@ -18,17 +19,38 @@ export async function submitClaim(
     return { success: false, error: "Datos inválidos." }
   }
 
+  const plateNumber = parsed.data.plateNumber.toUpperCase()
+
   try {
-    await db.insert(claimRequests).values({
-      plateNumber: parsed.data.plateNumber.toUpperCase(),
-      email: parsed.data.email,
-      vehicleBrand: parsed.data.vehicleBrand,
-    })
+    const [existing] = await db
+      .select({ status: claimRequests.status })
+      .from(claimRequests)
+      .where(eq(claimRequests.plateNumber, plateNumber))
+      .limit(1)
+
+    if (existing?.status === "approved") {
+      return { success: false, error: "Ya existe un reclamo aprobado para esta placa." }
+    }
+
+    await db
+      .insert(claimRequests)
+      .values({
+        plateNumber,
+        email: parsed.data.email,
+        vehicleBrand: parsed.data.vehicleBrand,
+      })
+      .onConflictDoUpdate({
+        target: claimRequests.plateNumber,
+        set: {
+          email: parsed.data.email,
+          vehicleBrand: parsed.data.vehicleBrand,
+          status: "pending",
+          reviewedAt: null,
+        },
+        where: ne(claimRequests.status, "approved"),
+      })
     return { success: true }
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "23505") {
-      return { success: false, error: "Ya existe una solicitud de reclamo para esta placa." }
-    }
     console.error("[claim] submitClaim error:", error)
     return { success: false, error: "Error al enviar la solicitud." }
   }
