@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { approveClaim, rejectClaim, revokeClaim, type ClaimDTO } from "./actions"
+import { approveClaim, rejectClaim, resendSetupEmail, revokeClaim, type ClaimDTO } from "./actions"
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
+
+type ActionResult = { success: boolean; error?: string; warning?: string }
 
 const statusLabels: Record<ClaimDTO["status"], string> = {
   pending: "Pendiente",
@@ -38,6 +40,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [search, setSearch] = useState("")
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [rowMessage, setRowMessage] = useState<Record<string, string>>({})
 
   const filtered = useMemo(() => {
     return claims.filter((claim) => {
@@ -54,24 +57,31 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
     setClaims((prev) => prev.map((claim) => (claim.id === id ? { ...claim, ...patch } : claim)))
   }
 
-  const runAction = async (id: string, action: (id: string) => Promise<{ success: boolean }>) => {
+  const runAction = async (id: string, action: (id: string) => Promise<ActionResult>): Promise<ActionResult> => {
     setLoadingId(id)
     const result = await action(id)
+    setRowMessage((prev) => ({ ...prev, [id]: result.warning || result.error || "" }))
     if (result.success) {
       patchClaim(id, { reviewedAt: new Date().toISOString() })
     }
     setLoadingId(null)
-    return result.success
+    return result
   }
 
   const handleApprove = async (id: string) => {
-    if (await runAction(id, approveClaim)) patchClaim(id, { status: "approved" })
+    const result = await runAction(id, approveClaim)
+    if (result.success) patchClaim(id, { status: "approved" })
   }
   const handleReject = async (id: string) => {
-    if (await runAction(id, rejectClaim)) patchClaim(id, { status: "rejected" })
+    const result = await runAction(id, rejectClaim)
+    if (result.success) patchClaim(id, { status: "rejected" })
   }
   const handleRevoke = async (id: string) => {
-    if (await runAction(id, revokeClaim)) patchClaim(id, { status: "rejected" })
+    const result = await runAction(id, revokeClaim)
+    if (result.success) patchClaim(id, { status: "rejected", hasPassword: false })
+  }
+  const handleResend = async (id: string) => {
+    await runAction(id, resendSetupEmail)
   }
 
   return (
@@ -112,47 +122,70 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
                 <TableCell>{claim.email}</TableCell>
                 <TableCell>{claim.vehicleBrand}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariants[claim.status]}>{statusLabels[claim.status]}</Badge>
+                  <div className="flex flex-col items-start gap-1">
+                    <Badge variant={statusVariants[claim.status]}>{statusLabels[claim.status]}</Badge>
+                    {claim.status === "approved" && !claim.hasPassword && (
+                      <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                        Esperando configuración
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>{new Date(claim.createdAt).toLocaleDateString("es-MX")}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {claim.status === "pending" && (
-                      <>
-                        <Button size="sm" disabled={loadingId === claim.id} onClick={() => handleApprove(claim.id)}>
-                          Aprobar
-                        </Button>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex justify-end gap-2">
+                      {claim.status === "pending" && (
+                        <>
+                          <Button size="sm" disabled={loadingId === claim.id} onClick={() => handleApprove(claim.id)}>
+                            Aprobar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={loadingId === claim.id}
+                            onClick={() => handleReject(claim.id)}
+                          >
+                            Rechazar
+                          </Button>
+                        </>
+                      )}
+                      {claim.status === "approved" && !claim.hasPassword && (
                         <Button
                           size="sm"
                           variant="outline"
                           disabled={loadingId === claim.id}
-                          onClick={() => handleReject(claim.id)}
+                          onClick={() => handleResend(claim.id)}
                         >
-                          Rechazar
+                          Reenviar correo
                         </Button>
-                      </>
-                    )}
-                    {claim.status === "approved" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive" disabled={loadingId === claim.id}>
-                            Revocar
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Revocar este reclamo?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esto quita el acceso al buzón de la placa {claim.plateNumber} de inmediato (se borra su
-                              contraseña). El dueño podría volver a reclamarla.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRevoke(claim.id)}>Revocar</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      )}
+                      {claim.status === "approved" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" disabled={loadingId === claim.id}>
+                              Revocar
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Revocar este reclamo?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esto quita el acceso al buzón de la placa {claim.plateNumber} de inmediato (se borra
+                                su contraseña y cualquier enlace de configuración pendiente). El dueño podría volver
+                                a reclamarla.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRevoke(claim.id)}>Revocar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                    {rowMessage[claim.id] && (
+                      <p className="max-w-xs text-xs text-muted-foreground">{rowMessage[claim.id]}</p>
                     )}
                   </div>
                 </TableCell>

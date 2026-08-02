@@ -14,6 +14,8 @@ export const claimRequests = pgTable(
     passwordHash: text("password_hash"),
     failedAttempts: integer("failed_attempts").notNull().default(0),
     lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    setupTokenHash: text("setup_token_hash"),
+    setupTokenExpiresAt: timestamp("setup_token_expires_at", { withTimezone: true }),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

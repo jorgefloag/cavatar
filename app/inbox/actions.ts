@@ -1,6 +1,7 @@
 "use server"
 
-import { eq } from "drizzle-orm"
+import crypto from "crypto"
+import { and, eq, gt, isNull } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
@@ -20,7 +21,7 @@ export interface MessageDTO {
 export type LookupResult =
   | { state: "no_claim" }
   | { state: "pending" }
-  | { state: "setup_password" }
+  | { state: "awaiting_setup" }
   | { state: "enter_password" }
 
 export async function lookupPlate(plateNumber: string): Promise<LookupResult> {
@@ -37,34 +38,46 @@ export async function lookupPlate(plateNumber: string): Promise<LookupResult> {
   }
 
   if (claim.status === "approved") {
-    return claim.passwordHash ? { state: "enter_password" } : { state: "setup_password" }
+    return claim.passwordHash ? { state: "enter_password" } : { state: "awaiting_setup" }
   }
 
   return { state: "no_claim" }
 }
 
-export async function setupPlatePassword(
-  plateNumber: string,
+export async function setupPasswordWithToken(
+  token: string,
   newPassword: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; plateNumber?: string }> {
   if (newPassword.length < 6) {
     return { success: false, error: "La clave debe tener al menos 6 caracteres" }
   }
 
-  const plate = plateNumber.trim().toUpperCase()
+  const tokenHash = crypto.createHash("sha256").update(token.trim()).digest("hex")
   const passwordHash = await bcrypt.hash(newPassword, 10)
 
-  const result = await db
+  const [result] = await db
     .update(claimRequests)
-    .set({ passwordHash, failedAttempts: 0, lockedUntil: null })
-    .where(eq(claimRequests.plateNumber, plate))
-    .returning({ id: claimRequests.id })
+    .set({
+      passwordHash,
+      failedAttempts: 0,
+      lockedUntil: null,
+      setupTokenHash: null,
+      setupTokenExpiresAt: null,
+    })
+    .where(
+      and(
+        eq(claimRequests.setupTokenHash, tokenHash),
+        gt(claimRequests.setupTokenExpiresAt, new Date()),
+        isNull(claimRequests.passwordHash),
+      ),
+    )
+    .returning({ plateNumber: claimRequests.plateNumber })
 
-  if (result.length === 0) {
-    return { success: false, error: "Error al guardar la clave. Intenta de nuevo." }
+  if (!result) {
+    return { success: false, error: "Enlace inválido o expirado." }
   }
 
-  return { success: true }
+  return { success: true, plateNumber: result.plateNumber }
 }
 
 export async function verifyPlatePassword(

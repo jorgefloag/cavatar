@@ -3,17 +3,17 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2, CheckCircle } from "lucide-react"
+import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { lookupPlate, setupPlatePassword, verifyPlatePassword, type MessageDTO } from "./actions"
+import { lookupPlate, verifyPlatePassword, type MessageDTO } from "./actions"
 
 type Message = MessageDTO
 
-// Step 1: plate_input -> Step 2: no_claim | pending | setup_password | enter_password -> inbox
-type PageState = "plate_input" | "loading" | "no_claim" | "pending" | "setup_password" | "enter_password" | "wrong_password" | "password_saved" | "inbox"
+// Step 1: plate_input -> Step 2: no_claim | pending | awaiting_setup | enter_password -> inbox
+type PageState = "plate_input" | "loading" | "no_claim" | "pending" | "awaiting_setup" | "enter_password" | "wrong_password" | "inbox"
 
 function InboxContent() {
   const searchParams = useSearchParams()
@@ -21,9 +21,6 @@ function InboxContent() {
   const [pageState, setPageState] = useState<PageState>("plate_input")
   const [plateNumber, setPlateNumber] = useState("")
   const [password, setPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [setupError, setSetupError] = useState("")
   const [currentPlate, setCurrentPlate] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -109,59 +106,9 @@ function InboxContent() {
     }
   }
 
-  // Step 2a: Setup password for new users
-  const handleSetupPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSetupError("")
-
-    if (newPassword.length < 6) {
-      setSetupError("La clave debe tener al menos 6 caracteres")
-      return
-    }
-
-    if (newPassword !== confirmPassword) {
-      setSetupError("Las claves no coinciden")
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const result = await setupPlatePassword(currentPlate, newPassword)
-
-      if (!result.success) {
-        setSetupError(result.error || "Error al guardar la clave. Intenta de nuevo.")
-        return
-      }
-
-      setPageState("password_saved")
-    } catch (error) {
-      console.error("[inbox] Error in handleSetupPassword:", error)
-      setSetupError("Error al guardar la clave. Intenta de nuevo.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleContinueToInbox = async () => {
-    setIsSubmitting(true)
-    try {
-      const result = await verifyPlatePassword(currentPlate, newPassword)
-      setMessages(result.messages || [])
-      setPageState("inbox")
-    } catch (error) {
-      console.error("[inbox] Error loading inbox after setup:", error)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const handleReset = () => {
     setPlateNumber("")
     setPassword("")
-    setNewPassword("")
-    setConfirmPassword("")
-    setSetupError("")
     setCurrentPlate("")
     setMessages([])
     setIsBlocked(false)
@@ -296,8 +243,8 @@ function InboxContent() {
     )
   }
 
-  // Step 2c: Setup password (approved but no password yet)
-  if (pageState === "setup_password") {
+  // Step 2c: Approved but the owner hasn't finished setup via their emailed link yet
+  if (pageState === "awaiting_setup") {
     return (
       <main className="min-h-screen bg-background px-4 py-12 md:py-20">
         <div className="mx-auto max-w-lg">
@@ -309,97 +256,21 @@ function InboxContent() {
             Volver
           </button>
 
-          <div className="mb-10">
-            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
-              Define tu clave de acceso
-            </h1>
-            <p className="text-muted-foreground">
-              Crea una clave para acceder a tu buzón de la placa{" "}
-              <span className="font-mono font-medium text-foreground">{currentPlate}</span>
-            </p>
-          </div>
-
-          <form onSubmit={handleSetupPassword} className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="newPassword" className="text-foreground">
-                Nueva clave
-              </Label>
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                disabled={isSubmitting}
-                className="rounded-xl border-border bg-background py-6 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:ring-foreground"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="confirmPassword" className="text-foreground">
-                Confirmar clave
-              </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Repite la clave"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={isSubmitting}
-                className="rounded-xl border-border bg-background py-6 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:ring-foreground"
-              />
-            </div>
-
-            {setupError && (
-              <p className="text-sm text-destructive">
-                {setupError}
-              </p>
-            )}
-
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isSubmitting || !newPassword.trim() || !confirmPassword.trim()}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
-            >
-              {isSubmitting ? "Guardando..." : "Guardar clave"}
-            </Button>
-          </form>
-        </div>
-      </main>
-    )
-  }
-
-  // Password saved success state
-  if (pageState === "password_saved") {
-    return (
-      <main className="min-h-screen bg-background px-4 py-12 md:py-20">
-        <div className="mx-auto max-w-lg">
-          <Link
-            href="/"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Link>
-
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <CheckCircle className="mb-6 h-16 w-16 text-foreground" strokeWidth={1.5} />
+            <Clock className="mb-6 h-16 w-16 text-muted-foreground/50" strokeWidth={1.5} />
             <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground md:text-2xl">
-              Clave guardada correctamente
+              Tu placa fue aprobada
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
-              Tu clave de acceso ha sido configurada. Ahora puedes acceder a tu buzón.
+              Revisa el correo con el que hiciste el reclamo para configurar tu acceso al buzón.
             </p>
             <Button
-              size="lg"
-              onClick={handleContinueToInbox}
-              disabled={isSubmitting}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-muted-foreground hover:text-foreground"
             >
-              {isSubmitting ? "Cargando..." : "Continuar al buzón"}
+              Consultar otra placa
             </Button>
           </div>
         </div>
