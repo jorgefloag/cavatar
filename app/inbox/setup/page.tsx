@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { ArrowLeft, Archive, CheckCircle, MessageSquare, Trash2 } from "lucide-react"
@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setupPasswordWithToken, verifyPlatePassword, type MessageDTO } from "@/app/inbox/actions"
+import { setupPasswordWithToken, validateSetupToken, verifyPlatePassword, type MessageDTO } from "@/app/inbox/actions"
 
-type PageState = "form" | "saved" | "inbox"
+type PageState = "checking" | "invalid" | "form" | "saved" | "inbox"
 
 function SetupContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token") || ""
 
-  const [pageState, setPageState] = useState<PageState>("form")
+  const [pageState, setPageState] = useState<PageState>("checking")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [setupError, setSetupError] = useState("")
@@ -24,14 +24,30 @@ function SetupContent() {
   const [messages, setMessages] = useState<MessageDTO[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  useEffect(() => {
+    if (!token) {
+      setPageState("invalid")
+      return
+    }
+    let cancelled = false
+    validateSetupToken(token)
+      .then((result) => {
+        if (cancelled) return
+        setPageState(result.valid ? "form" : "invalid")
+      })
+      .catch((error) => {
+        console.error("[inbox/setup] Error validating token:", error)
+        if (!cancelled) setPageState("invalid")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSetupError("")
 
-    if (!token) {
-      setSetupError("Enlace inválido o expirado.")
-      return
-    }
     if (newPassword.length < 6) {
       setSetupError("La clave debe tener al menos 6 caracteres")
       return
@@ -69,6 +85,44 @@ function SetupContent() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (pageState === "checking") {
+    return (
+      <main className="min-h-screen bg-background px-4 py-12 md:py-20">
+        <div className="mx-auto max-w-lg animate-pulse">
+          <div className="mb-8 h-4 w-16 rounded bg-muted" />
+          <div className="mb-3 h-8 w-48 rounded bg-muted" />
+          <div className="h-4 w-64 rounded bg-muted" />
+        </div>
+      </main>
+    )
+  }
+
+  if (pageState === "invalid") {
+    return (
+      <main className="min-h-screen bg-background px-4 py-12 md:py-20">
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/"
+            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Link>
+
+          <div className="mb-10">
+            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+              Enlace inválido o expirado
+            </h1>
+            <p className="text-muted-foreground">
+              Este enlace ya fue usado o dejó de ser válido. Si necesitas configurar tu clave, pide al administrador
+              que reenvíe el correo desde el panel de administración.
+            </p>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   if (pageState === "form") {

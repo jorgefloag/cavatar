@@ -44,6 +44,28 @@ export async function lookupPlate(plateNumber: string): Promise<LookupResult> {
   return { state: "no_claim" }
 }
 
+export async function validateSetupToken(token: string): Promise<{ valid: boolean }> {
+  if (!token.trim()) {
+    return { valid: false }
+  }
+
+  const tokenHash = crypto.createHash("sha256").update(token.trim()).digest("hex")
+
+  const [claim] = await db
+    .select({ id: claimRequests.id })
+    .from(claimRequests)
+    .where(
+      and(
+        eq(claimRequests.setupTokenHash, tokenHash),
+        gt(claimRequests.setupTokenExpiresAt, new Date()),
+        isNull(claimRequests.passwordHash),
+      ),
+    )
+    .limit(1)
+
+  return { valid: !!claim }
+}
+
 export async function setupPasswordWithToken(
   token: string,
   newPassword: string,
