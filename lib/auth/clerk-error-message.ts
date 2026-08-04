@@ -11,6 +11,7 @@ const CLERK_ERROR_MESSAGES: Record<string, string> = {
   // Registro (signUp.create)
   form_identifier_exists: "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
   form_password_pwned: "Esta contraseña fue expuesta en filtraciones de datos conocidas. Elige otra.",
+  form_password_not_strong_enough: "La contraseña no es lo suficientemente segura. Prueba con una más larga o menos común.",
   form_password_length_too_short: "La contraseña es demasiado corta.",
   form_param_format_invalid: "El formato del correo no es válido.",
 
