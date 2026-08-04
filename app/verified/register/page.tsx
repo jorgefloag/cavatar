@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
 
 function RegisterForm() {
   const router = useRouter()
@@ -38,8 +39,9 @@ function RegisterForm() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
       setStep("verify")
     } catch (error) {
-      console.error("[verified/register] Registration error:", error)
-      setErrorMessage("Error al crear la cuenta. Intenta nuevamente.")
+      const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
+      if (!expected) console.error("[verified/register] Registration error:", error)
+      setErrorMessage(message)
     } finally {
       setIsLoading(false)
     }
@@ -61,8 +63,9 @@ function RegisterForm() {
         setErrorMessage("Código inválido. Intenta nuevamente.")
       }
     } catch (error) {
-      console.error("[verified/register] Verification error:", error)
-      setErrorMessage("Código inválido. Intenta nuevamente.")
+      const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      if (!expected) console.error("[verified/register] Verification error:", error)
+      setErrorMessage(message)
     } finally {
       setIsLoading(false)
     }

@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
 
 function LoginForm() {
   const router = useRouter()
@@ -35,8 +36,9 @@ function LoginForm() {
         setErrorMessage("No se pudo iniciar sesión. Intenta nuevamente.")
       }
     } catch (error) {
-      console.error("[verified/login] Login error:", error)
-      setErrorMessage("Correo o contraseña incorrectos.")
+      const { message, expected } = getClerkErrorMessage(error, "Correo o contraseña incorrectos.")
+      if (!expected) console.error("[verified/login] Login error:", error)
+      setErrorMessage(message)
     } finally {
       setIsLoading(false)
     }
