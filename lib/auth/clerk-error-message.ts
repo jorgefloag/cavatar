@@ -18,6 +18,9 @@ const CLERK_ERROR_MESSAGES: Record<string, string> = {
   // Verificación de código (signUp.attemptEmailAddressVerification)
   form_code_incorrect: "Código incorrecto. Intenta de nuevo.",
   verification_expired: "El código expiró. Vuelve a intentar el registro para recibir uno nuevo.",
+
+  // Ya hay una sesión activa (p. ej. sesión abierta en otro dispositivo)
+  session_exists: "Ya tienes una sesión activa. Cierra sesión antes de continuar.",
 }
 
 export function getClerkErrorMessage(
