@@ -93,6 +93,12 @@ function LoginForm() {
                 required
                 className="h-12 rounded-lg text-base"
               />
+              <Link
+                href="/verified/forgot-password"
+                className="self-end text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </Field>
 
             {errorMessage && (
