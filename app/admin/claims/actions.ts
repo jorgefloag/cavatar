@@ -5,6 +5,8 @@ import { db } from "@/lib/db"
 import { claimRequests } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
 import { issueSetupToken } from "@/lib/claims/issue-setup-token"
+import { sendClaimRejectedEmail } from "@/lib/email/send-claim-rejected-email"
+import { sendClaimRevokedEmail } from "@/lib/email/send-claim-revoked-email"
 
 const RESEND_COOLDOWN_MS = 60 * 1000
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000
@@ -94,28 +96,35 @@ export async function resendSetupEmail(id: string): Promise<{ success: boolean; 
   }
 }
 
-export async function rejectClaim(id: string): Promise<{ success: boolean; error?: string }> {
+export async function rejectClaim(id: string): Promise<{ success: boolean; error?: string; warning?: string }> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return { success: false, error: "No autorizado" }
 
   try {
-    await db
+    const [result] = await db
       .update(claimRequests)
       .set({ status: "rejected", reviewedAt: new Date() })
       .where(and(eq(claimRequests.id, id), eq(claimRequests.status, "pending")))
-    return { success: true }
+      .returning({ email: claimRequests.email, plateNumber: claimRequests.plateNumber })
+
+    if (!result) {
+      return { success: false, error: "Este reclamo ya no está pendiente." }
+    }
+
+    const sent = await sendClaimRejectedEmail({ to: result.email, plateNumber: result.plateNumber })
+    return { success: true, warning: sent.success ? undefined : "El reclamo se rechazó, pero el correo no se pudo enviar." }
   } catch (error) {
     console.error("[admin/claims] rejectClaim error:", error)
     return { success: false, error: "Error al rechazar el reclamo." }
   }
 }
 
-export async function revokeClaim(id: string): Promise<{ success: boolean; error?: string }> {
+export async function revokeClaim(id: string): Promise<{ success: boolean; error?: string; warning?: string }> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return { success: false, error: "No autorizado" }
 
   try {
-    await db
+    const [result] = await db
       .update(claimRequests)
       .set({
         status: "rejected",
@@ -127,7 +136,14 @@ export async function revokeClaim(id: string): Promise<{ success: boolean; error
         setupTokenExpiresAt: null,
       })
       .where(and(eq(claimRequests.id, id), eq(claimRequests.status, "approved")))
-    return { success: true }
+      .returning({ email: claimRequests.email, plateNumber: claimRequests.plateNumber })
+
+    if (!result) {
+      return { success: false, error: "Este reclamo ya no está aprobado." }
+    }
+
+    const sent = await sendClaimRevokedEmail({ to: result.email, plateNumber: result.plateNumber })
+    return { success: true, warning: sent.success ? undefined : "El reclamo se revocó, pero el correo no se pudo enviar." }
   } catch (error) {
     console.error("[admin/claims] revokeClaim error:", error)
     return { success: false, error: "Error al revocar el reclamo." }

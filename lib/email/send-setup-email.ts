@@ -1,6 +1,4 @@
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { resend, EMAIL_FROM } from "./resend-client"
 
 export async function sendSetupEmail({
   to,
@@ -13,7 +11,7 @@ export async function sendSetupEmail({
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await resend.emails.send({
-      from: "CAVATAR <no-reply@cavatarcr.com>",
+      from: EMAIL_FROM,
       to,
       subject: `Configura el acceso a tu buzón de la placa ${plateNumber}`,
       html: `

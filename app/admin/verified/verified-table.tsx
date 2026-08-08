@@ -26,6 +26,8 @@ import {
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
 
+type ActionResult = { success: boolean; error?: string; warning?: string }
+
 const statusLabels: Record<VerifiedRequestAdminDTO["status"], string> = {
   pending: "Pendiente",
   approved: "Aprobado",
@@ -43,6 +45,7 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [search, setSearch] = useState("")
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [rowMessage, setRowMessage] = useState<Record<string, string>>({})
 
   const filtered = useMemo(() => {
     return requests.filter((req) => {
@@ -64,9 +67,10 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
     setRequests((prev) => prev.map((req) => (req.id === id ? { ...req, ...patch } : req)))
   }
 
-  const runAction = async (id: string, action: (id: string) => Promise<{ success: boolean }>) => {
+  const runAction = async (id: string, action: (id: string) => Promise<ActionResult>) => {
     setLoadingId(id)
     const result = await action(id)
+    setRowMessage((prev) => ({ ...prev, [id]: result.warning || result.error || "" }))
     if (result.success) {
       patchRequest(id, { reviewedAt: new Date().toISOString() })
     }
@@ -126,42 +130,47 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
                 </TableCell>
                 <TableCell>{new Date(req.createdAt).toLocaleDateString("es-MX")}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {req.status === "pending" && (
-                      <>
-                        <Button size="sm" disabled={loadingId === req.id} onClick={() => handleApprove(req.id)}>
-                          Aprobar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={loadingId === req.id}
-                          onClick={() => handleReject(req.id)}
-                        >
-                          Rechazar
-                        </Button>
-                      </>
-                    )}
-                    {req.status === "approved" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive" disabled={loadingId === req.id}>
-                            Revocar
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex justify-end gap-2">
+                      {req.status === "pending" && (
+                        <>
+                          <Button size="sm" disabled={loadingId === req.id} onClick={() => handleApprove(req.id)}>
+                            Aprobar
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Revocar este perfil verificado?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {req.userEmail} perderá el límite ampliado de envío de mensajes de inmediato.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRevoke(req.id)}>Revocar</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={loadingId === req.id}
+                            onClick={() => handleReject(req.id)}
+                          >
+                            Rechazar
+                          </Button>
+                        </>
+                      )}
+                      {req.status === "approved" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" disabled={loadingId === req.id}>
+                              Revocar
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Revocar este perfil verificado?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {req.userEmail} perderá el límite ampliado de envío de mensajes de inmediato.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRevoke(req.id)}>Revocar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                    {rowMessage[req.id] && (
+                      <p className="max-w-xs text-xs text-muted-foreground">{rowMessage[req.id]}</p>
                     )}
                   </div>
                 </TableCell>
