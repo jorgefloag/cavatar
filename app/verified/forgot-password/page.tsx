@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
+import { revokeOtherSessions } from "@/lib/auth/revoke-other-sessions"
 
 type Step = "request" | "verify" | "reset"
 
@@ -108,7 +109,8 @@ export default function ForgotPasswordPage() {
     try {
       // Sin signOutOfOtherSessions: el flag hace que Clerk rechace la petición con 422
       // ("sign_out_of_other_sessions is not a valid parameter for this request") en esta
-      // instancia — ver gap documentado en CLAUDE.md (Roadmap / known gaps).
+      // instancia. El mismo efecto (cerrar las otras sesiones) se logra abajo con
+      // revokeOtherSessions() vía Backend API, una vez que la sesión nueva esté activa.
       const { error } = await signIn.resetPasswordEmailCode.submitPassword({
         password: newPassword,
       })
@@ -121,6 +123,10 @@ export default function ForgotPasswordPage() {
 
       if (signIn.status === "complete") {
         await finalizeAndRedirect(signIn, router, "/verified/dashboard")
+        const revoked = await revokeOtherSessions()
+        if (!revoked.success) {
+          console.error("[verified/forgot-password] No se pudieron revocar otras sesiones:", revoked.error)
+        }
       } else {
         // needs_client_trust también es un status posible acá en teoría (es el mismo
         // recurso `signIn` que en login), pero Clerk no lo documenta para este flujo.
