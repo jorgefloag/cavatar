@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-background px-4 py-16 md:py-20">
@@ -10,11 +12,21 @@ export function Footer() {
         {/* Contact */}
         <div className="mt-8">
           <a
-            href="mailto:hola@cavatar.app"
+            href="mailto:hola@cavatarcr.com"
             className="inline-block border-b-2 border-primary pb-1 font-mono text-sm text-primary transition-all hover:brightness-110"
           >
-            hola@cavatar.app
+            hola@cavatarcr.com
           </a>
+        </div>
+
+        {/* Legal links */}
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <Link href="/privacidad" className="underline underline-offset-4 transition-colors hover:text-foreground">
+            Aviso de Privacidad
+          </Link>
+          <Link href="/terminos" className="underline underline-offset-4 transition-colors hover:text-foreground">
+            Términos de Servicio
+          </Link>
         </div>
 
         {/* Version - green for system status */}

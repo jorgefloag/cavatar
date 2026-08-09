@@ -6,6 +6,8 @@ import { submitClaim } from "./actions"
 import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 
 export default function ClaimPage() {
@@ -15,6 +17,7 @@ export default function ClaimPage() {
   const [plateNumber, setPlateNumber] = useState("")
   const [email, setEmail] = useState("")
   const [vehicleBrand, setVehicleBrand] = useState("")
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,6 +38,7 @@ export default function ClaimPage() {
       setPlateNumber("")
       setEmail("")
       setVehicleBrand("")
+      setAcceptedPrivacy(false)
       setIsSubmitted(true)
     }
   }
@@ -131,6 +135,27 @@ export default function ClaimPage() {
               />
             </Field>
 
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="acceptedPrivacy"
+                checked={acceptedPrivacy}
+                onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="acceptedPrivacy" className="text-sm font-normal text-muted-foreground">
+                He leído y acepto el{" "}
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Aviso de Privacidad
+                </a>{" "}
+                de CAVATAR.
+              </Label>
+            </div>
+
             {errorMessage && (
               <p className="text-center text-sm text-red-500">{errorMessage}</p>
             )}
@@ -138,7 +163,7 @@ export default function ClaimPage() {
             <Button
               type="submit"
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || !acceptedPrivacy}
               className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
             >
               {isLoading ? "Enviando..." : "Enviar solicitud"}

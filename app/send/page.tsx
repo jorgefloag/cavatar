@@ -7,6 +7,8 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
 
 // =============================================================================
@@ -74,7 +76,8 @@ export default function SendPage() {
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
   const [contact, setContact] = useState("")
-  
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+
   // Anti-spam state
   const [isBlocked, setIsBlocked] = useState(false)
   const [remainingMessages, setRemainingMessages] = useState(MAX_MESSAGES_PER_HOUR)
@@ -135,7 +138,9 @@ export default function SendPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    if (!acceptedPrivacy) return
+
     // Double-check spam status before submitting (verified users bypass this)
     if (!isVerifiedUser && !canSendMessage()) {
       console.log("[v0] Non-verified user blocked by rate limit")
@@ -169,12 +174,13 @@ export default function SendPage() {
       setName("")
       setMessage("")
       setContact("")
+      setAcceptedPrivacy(false)
       setIsSubmitted(true)
     }
   }
 
   // Determine if button should be disabled (verified users are never blocked)
-  const isButtonDisabled = isLoading || (!isVerifiedUser && isBlocked) || isCheckingVerification
+  const isButtonDisabled = isLoading || (!isVerifiedUser && isBlocked) || isCheckingVerification || !acceptedPrivacy
 
   const characterCount = message.length
   const maxCharacters = 300
@@ -366,6 +372,28 @@ export default function SendPage() {
                 className="h-12 rounded-lg text-base"
               />
             </Field>
+
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="acceptedPrivacy"
+                checked={acceptedPrivacy}
+                onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="acceptedPrivacy" className="text-sm font-normal text-muted-foreground">
+                Entiendo que mi mensaje (y el alias/contacto que incluya) será visible públicamente para quien
+                consulte esta placa, y acepto el{" "}
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Aviso de Privacidad
+                </a>
+                .
+              </Label>
+            </div>
 
             {errorMessage && (
               <p className="text-center text-sm text-red-500">{errorMessage}</p>

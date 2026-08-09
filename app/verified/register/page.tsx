@@ -7,6 +7,8 @@ import { useSignUp } from "@clerk/nextjs"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
@@ -22,10 +24,11 @@ function RegisterForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [code, setCode] = useState("")
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isLoading) return
+    if (isLoading || !acceptedTerms) return
     setIsLoading(true)
     setErrorMessage("")
 
@@ -148,6 +151,36 @@ function RegisterForm() {
                 />
               </Field>
 
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="acceptedTerms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="acceptedTerms" className="text-sm font-normal text-muted-foreground">
+                  He leído y acepto el{" "}
+                  <a
+                    href="/privacidad"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground underline underline-offset-4"
+                  >
+                    Aviso de Privacidad
+                  </a>{" "}
+                  y los{" "}
+                  <a
+                    href="/terminos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground underline underline-offset-4"
+                  >
+                    Términos de Servicio
+                  </a>{" "}
+                  de CAVATAR.
+                </Label>
+              </div>
+
               {errorMessage && (
                 <p className="text-center text-sm text-red-500">{errorMessage}</p>
               )}
@@ -157,7 +190,7 @@ function RegisterForm() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={isLoading}
+                disabled={isLoading || !acceptedTerms}
                 className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
               >
                 {isLoading ? "Creando cuenta..." : "Crear cuenta"}
