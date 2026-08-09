@@ -3,19 +3,19 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useSignIn } from "@clerk/nextjs/legacy"
-import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
+import { useSignIn } from "@clerk/nextjs"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
+import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 
 type Step = "request" | "verify" | "reset"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const { isLoaded, signIn, setActive } = useSignIn()
+  const { signIn } = useSignIn()
   const [step, setStep] = useState<Step>("request")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
@@ -26,19 +26,38 @@ export default function ForgotPasswordPage() {
 
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLoaded) return
+    if (isLoading) return
     setIsLoading(true)
     setErrorMessage("")
 
     try {
-      await signIn.create({ strategy: "reset_password_email_code", identifier: email })
-      setStep("verify")
-    } catch (error) {
-      if (isClerkAPIResponseError(error) && error.errors[0]?.code === "form_identifier_not_found") {
-        // No revelamos si el correo tiene cuenta o no: avanzamos igual.
-        setStep("verify")
+      const { error: createError } = await signIn.create({ identifier: email })
+      if (createError) {
+        if (createError.code === "form_identifier_not_found") {
+          // No revelamos si el correo tiene cuenta o no: avanzamos igual.
+          setStep("verify")
+          return
+        }
+        const { message, expected } = getClerkErrorMessage(createError, "No se pudo enviar el código. Intenta nuevamente.")
+        if (!expected) console.error("[verified/forgot-password] Request code error:", createError)
+        setErrorMessage(message)
         return
       }
+
+      const { error: sendCodeError } = await signIn.resetPasswordEmailCode.sendCode()
+      if (sendCodeError) {
+        if (sendCodeError.code === "form_identifier_not_found") {
+          setStep("verify")
+          return
+        }
+        const { message, expected } = getClerkErrorMessage(sendCodeError, "No se pudo enviar el código. Intenta nuevamente.")
+        if (!expected) console.error("[verified/forgot-password] Send code error:", sendCodeError)
+        setErrorMessage(message)
+        return
+      }
+
+      setStep("verify")
+    } catch (error) {
       const { message, expected } = getClerkErrorMessage(error, "No se pudo enviar el código. Intenta nuevamente.")
       if (!expected) console.error("[verified/forgot-password] Request code error:", error)
       setErrorMessage(message)
@@ -49,12 +68,18 @@ export default function ForgotPasswordPage() {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLoaded) return
+    if (isLoading) return
     setIsLoading(true)
     setErrorMessage("")
 
     try {
-      await signIn.attemptFirstFactor({ strategy: "reset_password_email_code", code })
+      const { error } = await signIn.resetPasswordEmailCode.verifyCode({ code })
+      if (error) {
+        const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        if (!expected) console.error("[verified/forgot-password] Verify code error:", error)
+        setErrorMessage(message)
+        return
+      }
       setStep("reset")
     } catch (error) {
       const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
@@ -67,7 +92,7 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLoaded) return
+    if (isLoading) return
     setErrorMessage("")
 
     if (newPassword.length < 8) {
@@ -81,12 +106,28 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true)
     try {
-      const result = await signIn.resetPassword({ password: newPassword, signOutOfOtherSessions: true })
+      // Sin signOutOfOtherSessions: el flag hace que Clerk rechace la petición con 422
+      // ("sign_out_of_other_sessions is not a valid parameter for this request") en esta
+      // instancia — ver gap documentado en CLAUDE.md (Roadmap / known gaps).
+      const { error } = await signIn.resetPasswordEmailCode.submitPassword({
+        password: newPassword,
+      })
+      if (error) {
+        const { message, expected } = getClerkErrorMessage(error, "No se pudo guardar la contraseña. Intenta nuevamente.")
+        if (!expected) console.error("[verified/forgot-password] Reset password error:", error)
+        setErrorMessage(message)
+        return
+      }
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId })
-        router.push("/verified/dashboard")
+      if (signIn.status === "complete") {
+        await finalizeAndRedirect(signIn, router, "/verified/dashboard")
       } else {
+        // needs_client_trust también es un status posible acá en teoría (es el mismo
+        // recurso `signIn` que en login), pero Clerk no lo documenta para este flujo.
+        // Fallback genérico + log para no dejar al usuario en una pantalla rota;
+        // si el log confirma que ocurre en la práctica, se porta la verificación de
+        // dispositivo de login/page.tsx a este archivo también.
+        console.error("[verified/forgot-password] Sign-in attempt not complete after reset:", signIn.status)
         setErrorMessage("No se pudo guardar la contraseña. Intenta nuevamente.")
       }
     } catch (error) {

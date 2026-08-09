@@ -23,14 +23,28 @@ const CLERK_ERROR_MESSAGES: Record<string, string> = {
   session_exists: "Ya tienes una sesión activa. Cierra sesión antes de continuar.",
 }
 
+// La API de Signals ya no lanza excepciones para errores esperados: los
+// métodos devuelven { error }, donde error es un ClerkError con `code` como
+// propiedad directa (no error.errors[0].code como en la API legacy). No hay
+// un tipo público importable para ClerkError, así que se valida en runtime.
+// isClerkAPIResponseError se conserva como respaldo por si algo inesperado
+// (p. ej. un fallo de red) sigue llegando como excepción capturada.
+function extractErrorCode(error: unknown): string | undefined {
+  if (isClerkAPIResponseError(error)) {
+    return error.errors[0]?.code
+  }
+  if (error && typeof error === "object" && "code" in error && typeof error.code === "string") {
+    return error.code
+  }
+  return undefined
+}
+
 export function getClerkErrorMessage(
   error: unknown,
   fallback: string,
 ): { message: string; expected: boolean } {
-  if (isClerkAPIResponseError(error)) {
-    const code = error.errors[0]?.code
-    const mapped = code ? CLERK_ERROR_MESSAGES[code] : undefined
-    if (mapped) return { message: mapped, expected: true }
-  }
+  const code = extractErrorCode(error)
+  const mapped = code ? CLERK_ERROR_MESSAGES[code] : undefined
+  if (mapped) return { message: mapped, expected: true }
   return { message: fallback, expected: false }
 }

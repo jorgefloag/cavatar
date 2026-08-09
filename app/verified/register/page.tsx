@@ -3,18 +3,19 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useSignUp } from "@clerk/nextjs/legacy"
+import { useSignUp } from "@clerk/nextjs"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
+import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get("returnTo")
-  const { isLoaded, signUp, setActive } = useSignUp()
+  const { signUp } = useSignUp()
   const [step, setStep] = useState<"form" | "verify">("form")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
@@ -24,7 +25,7 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLoaded) return
+    if (isLoading) return
     setIsLoading(true)
     setErrorMessage("")
 
@@ -35,8 +36,25 @@ function RegisterForm() {
     }
 
     try {
-      await signUp.create({ emailAddress: email, password })
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      const { error } = await signUp.password({ emailAddress: email, password })
+      if (error) {
+        const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
+        if (!expected) console.error("[verified/register] Registration error:", error)
+        setErrorMessage(message)
+        return
+      }
+
+      const sendResult = await signUp.verifications.sendEmailCode()
+      if (sendResult.error) {
+        const { message, expected } = getClerkErrorMessage(
+          sendResult.error,
+          "Error al enviar el código de verificación. Intenta nuevamente.",
+        )
+        if (!expected) console.error("[verified/register] Send code error:", sendResult.error)
+        setErrorMessage(message)
+        return
+      }
+
       setStep("verify")
     } catch (error) {
       const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
@@ -49,17 +67,23 @@ function RegisterForm() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLoaded) return
+    if (isLoading) return
     setIsLoading(true)
     setErrorMessage("")
 
     try {
-      const result = await signUp.attemptEmailAddressVerification({ code })
+      const { error } = await signUp.verifications.verifyEmailCode({ code })
+      if (error) {
+        const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        if (!expected) console.error("[verified/register] Verification error:", error)
+        setErrorMessage(message)
+        return
+      }
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId })
-        router.push(returnTo || "/verified/request")
+      if (signUp.status === "complete") {
+        await finalizeAndRedirect(signUp, router, returnTo || "/verified/request")
       } else {
+        console.error("[verified/register] Sign-up attempt not complete:", signUp.status)
         setErrorMessage("Código inválido. Intenta nuevamente.")
       }
     } catch (error) {
