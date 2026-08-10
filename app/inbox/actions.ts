@@ -105,7 +105,7 @@ export async function setupPasswordWithToken(
 export async function verifyPlatePassword(
   plateNumber: string,
   password: string,
-): Promise<{ success: boolean; locked?: boolean; messages?: MessageDTO[] }> {
+): Promise<{ success: boolean; locked?: boolean; messages?: MessageDTO[]; carName?: string | null }> {
   const plate = plateNumber.trim().toUpperCase()
 
   const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.plateNumber, plate)).limit(1)
@@ -159,5 +159,5 @@ export async function verifyPlatePassword(
       plate_number: msg.plateNumber,
     }))
 
-  return { success: true, messages: formatted }
+  return { success: true, messages: formatted, carName: claim.carName }
 }

@@ -16,6 +16,7 @@ export interface ClaimDTO {
   plateNumber: string
   email: string
   vehicleBrand: string
+  carName: string | null
   status: "pending" | "approved" | "rejected"
   hasPassword: boolean
   createdAt: string
@@ -33,6 +34,7 @@ export async function fetchAllClaims(): Promise<ClaimDTO[]> {
     plateNumber: row.plateNumber,
     email: row.email,
     vehicleBrand: row.vehicleBrand,
+    carName: row.carName,
     status: row.status,
     hasPassword: row.passwordHash !== null,
     createdAt: row.createdAt.toISOString(),

@@ -88,6 +88,14 @@ export default function TerminosPage() {
               aprobado sea legítimo — si creés que tu placa fue reclamada indebidamente, contactanos de inmediato a
               hola@cavatarcr.com.
             </p>
+            <p className="mt-3">
+              Reclamar y mantener una placa activa en CAVATAR tiene un costo de ₡5,000 colones por año, pagadero
+              mediante SINPE Móvil al número indicado en la página de reclamo. El comprobante de pago debe enviarse
+              por WhatsApp al número de contacto ahí indicado; no procesamos pagos por ningún otro medio. La
+              aprobación de tu solicitud queda sujeta a la verificación manual de este pago, además de la
+              verificación del correo electrónico ya descrita. CAVATAR se reserva el derecho de ajustar este monto
+              con aviso previo.
+            </p>
           </section>
 
           <section>

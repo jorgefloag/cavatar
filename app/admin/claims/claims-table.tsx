@@ -110,6 +110,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
               <TableHead>Placa</TableHead>
               <TableHead>Correo</TableHead>
               <TableHead>Marca</TableHead>
+              <TableHead>Nombre del carro</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Creado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -121,6 +122,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
                 <TableCell className="font-mono">{claim.plateNumber}</TableCell>
                 <TableCell>{claim.email}</TableCell>
                 <TableCell>{claim.vehicleBrand}</TableCell>
+                <TableCell className="text-muted-foreground">{claim.carName || "—"}</TableCell>
                 <TableCell>
                   <div className="flex flex-col items-start gap-1">
                     <Badge variant={statusVariants[claim.status]}>{statusLabels[claim.status]}</Badge>
@@ -193,7 +195,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   No hay reclamos que coincidan.
                 </TableCell>
               </TableRow>

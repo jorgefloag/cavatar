@@ -55,8 +55,9 @@ export default function PrivacidadPage() {
             <ul>
               <li>
                 <strong className="text-foreground">Para reclamar una placa</strong> (/claim): correo electrónico,
-                marca del vehículo, y el número de placa que estás reclamando. Los usamos para verificar tu
-                solicitud y contactarte sobre su estado.
+                marca del vehículo, y el número de placa que estás reclamando. Opcionalmente, el nombre o apodo de
+                tu carro, si le tenés uno — no se usa para verificar tu identidad, es solo información de producto.
+                Los usamos para verificar tu solicitud y contactarte sobre su estado.
               </li>
               <li>
                 <strong className="text-foreground">Para enviar un mensaje a una placa</strong> (/send): el mensaje
@@ -74,6 +75,11 @@ export default function PrivacidadPage() {
                 contraseña que vos definís, que guardamos con hash (bcrypt) — nunca la contraseña en sí.
               </li>
             </ul>
+            <p className="mt-3">
+              El pago anual de ₡5,000 para reclamar una placa se realiza directamente por SINPE Móvil y WhatsApp
+              entre vos y el administrador de CAVATAR — no recolectamos ni almacenamos tu número de teléfono, el
+              comprobante de pago, ni ningún dato asociado a esa transacción en la base de datos de CAVATAR.
+            </p>
           </section>
 
           <section>

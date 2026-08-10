@@ -26,12 +26,17 @@ const faqs = [
   {
     question: "¿Cómo reclamo mi placa?",
     answer:
-      "Haz clic en 'Reclama tu placa', ingresa el número de tu placa y sigue el proceso de verificación para vincular tu vehículo a tu cuenta.",
+      "Haz clic en 'Reclama tu placa', completa el formulario con tu placa, correo y marca del vehículo, y realiza el pago anual de ₡5,000 vía SINPE Móvil al número indicado, enviando el comprobante por WhatsApp. Una vez que verifiquemos tu correo y el pago, aprobamos tu solicitud y te llega un enlace para configurar tu contraseña.",
   },
   {
     question: "¿Tiene algún costo?",
     answer:
-      "El servicio básico de envío y recepción de mensajes es gratuito. Funciones premium adicionales podrán estar disponibles en el futuro.",
+      "Enviar y recibir mensajes es gratuito. Reclamar una placa, para tener tu propio buzón privado, tiene un costo de ₡5,000 colones por año, pagadero vía SINPE Móvil.",
+  },
+  {
+    question: "¿Qué gano al reclamar mi placa?",
+    answer:
+      "Reclamar tu placa no es solo un trámite — es abrir un canal directo a tu carro que antes no existía. Vas a recibir alertas (como que dejaste las luces encendidas o estás mal parqueado), avisos y notificaciones importantes, saludos de gente que te reconoció en la calle, propuestas inesperadas, y hasta cupones, regalos, promociones y descuentos que marcas o negocios podrían dejarte directamente en tu placa. Es tu propio espacio para conectar con el mundo que te rodea, con vos decidiendo siempre qué leer y a quién responder.",
   },
 ]
 

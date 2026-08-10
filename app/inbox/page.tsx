@@ -22,6 +22,7 @@ function InboxContent() {
   const [plateNumber, setPlateNumber] = useState("")
   const [password, setPassword] = useState("")
   const [currentPlate, setCurrentPlate] = useState("")
+  const [carName, setCarName] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -92,6 +93,7 @@ function InboxContent() {
       if (result.success) {
         setIsBlocked(false)
         setMessages(result.messages || [])
+        setCarName(result.carName ?? null)
         setPageState("inbox")
       } else if (result.locked) {
         setIsBlocked(true)
@@ -110,6 +112,7 @@ function InboxContent() {
     setPlateNumber("")
     setPassword("")
     setCurrentPlate("")
+    setCarName(null)
     setMessages([])
     setIsBlocked(false)
     setPageState("plate_input")
@@ -379,7 +382,7 @@ function InboxContent() {
           <div className="mb-10">
             <div className="mb-3 flex items-center justify-between">
               <h1 className="font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
-                Mensajes recibidos
+                {carName ? `Buzón de ${carName}` : "Mensajes recibidos"}
               </h1>
               <Button
                 variant="ghost"

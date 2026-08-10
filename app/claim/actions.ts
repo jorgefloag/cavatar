@@ -9,6 +9,7 @@ const claimSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20),
   email: z.string().trim().email(),
   vehicleBrand: z.string().trim().min(1).max(100),
+  carName: z.string().trim().max(60).optional(),
 })
 
 export async function submitClaim(
@@ -20,6 +21,7 @@ export async function submitClaim(
   }
 
   const plateNumber = parsed.data.plateNumber.toUpperCase()
+  const carName = parsed.data.carName || null
 
   try {
     const [existing] = await db
@@ -38,12 +40,14 @@ export async function submitClaim(
         plateNumber,
         email: parsed.data.email,
         vehicleBrand: parsed.data.vehicleBrand,
+        carName,
       })
       .onConflictDoUpdate({
         target: claimRequests.plateNumber,
         set: {
           email: parsed.data.email,
           vehicleBrand: parsed.data.vehicleBrand,
+          carName,
           status: "pending",
           reviewedAt: null,
         },

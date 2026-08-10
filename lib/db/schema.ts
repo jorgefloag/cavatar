@@ -10,6 +10,7 @@ export const claimRequests = pgTable(
     plateNumber: text("plate_number").notNull(),
     email: text("email").notNull(),
     vehicleBrand: text("vehicle_brand").notNull(),
+    carName: text("car_name"),
     status: claimStatusEnum("status").notNull().default("pending"),
     passwordHash: text("password_hash"),
     failedAttempts: integer("failed_attempts").notNull().default(0),
