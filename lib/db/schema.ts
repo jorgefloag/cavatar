@@ -1,7 +1,8 @@
-import { pgTable, pgEnum, uuid, text, integer, timestamp, unique } from "drizzle-orm/pg-core"
+import { pgTable, pgEnum, uuid, text, integer, boolean, timestamp, unique } from "drizzle-orm/pg-core"
 
 export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved", "rejected"])
 export const verifiedStatusEnum = pgEnum("verified_status", ["pending", "approved", "rejected"])
+export const bannerLocationEnum = pgEnum("banner_location", ["landing", "send", "inbox"])
 
 export const claimRequests = pgTable(
   "claim_requests",
@@ -45,4 +46,18 @@ export const verifiedRequests = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.userEmail)],
+)
+
+export const banners = pgTable(
+  "banners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    location: bannerLocationEnum("location").notNull(),
+    imageUrl: text("image_url").notNull(),
+    linkUrl: text("link_url"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.location)],
 )

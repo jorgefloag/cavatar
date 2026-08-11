@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/claims", label: "Reclamos" },
   { href: "/admin/verified", label: "Perfiles verificados" },
   { href: "/admin/messages", label: "Mensajes" },
+  { href: "/admin/banners", label: "Banners" },
 ]
 
 export function AdminNav({ userEmail }: { userEmail: string }) {
