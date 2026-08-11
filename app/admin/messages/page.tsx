@@ -14,7 +14,7 @@ export default async function AdminMessagesPage({
 
   return (
     <div>
-      <h1 className="mb-8 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">Mensajes</h1>
+      <h1 className="mb-8 text-2xl font-bold text-foreground md:text-3xl">Mensajes</h1>
       <MessagesTable initialResult={result} initialPlateFilter={plate} />
     </div>
   )

@@ -20,7 +20,7 @@ export default function TerminosPage() {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Términos de Servicio
           </h1>
           <p className="text-sm text-muted-foreground">Última actualización: 9 de agosto de 2026</p>
@@ -35,7 +35,7 @@ export default function TerminosPage() {
         </div>
 
         {/* Content */}
-        <div className="flex flex-col gap-8 text-muted-foreground [&_h2]:mb-3 [&_h2]:font-mono [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_p]:leading-relaxed [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5">
+        <div className="flex flex-col gap-8 text-muted-foreground [&_h2]:mb-3 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_p]:leading-relaxed [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5">
           <section>
             <h2>1. Qué es CAVATAR</h2>
             <p>

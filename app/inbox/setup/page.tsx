@@ -112,7 +112,7 @@ function SetupContent() {
           </Link>
 
           <div className="mb-10">
-            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+            <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
               Enlace inválido o expirado
             </h1>
             <p className="text-muted-foreground">
@@ -138,7 +138,7 @@ function SetupContent() {
           </Link>
 
           <div className="mb-10">
-            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+            <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
               Define tu clave de acceso
             </h1>
             <p className="text-muted-foreground">Crea una clave para acceder a tu buzón.</p>
@@ -183,7 +183,7 @@ function SetupContent() {
               type="submit"
               size="lg"
               disabled={isSubmitting || !newPassword.trim() || !confirmPassword.trim()}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isSubmitting ? "Guardando..." : "Guardar clave"}
             </Button>
@@ -199,18 +199,18 @@ function SetupContent() {
         <div className="mx-auto max-w-lg">
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <CheckCircle className="mb-6 h-16 w-16 text-foreground" strokeWidth={1.5} />
-            <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground md:text-2xl">
+            <h2 className="mb-3 text-xl font-bold text-foreground md:text-2xl">
               Clave guardada correctamente
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
               Tu clave de acceso al buzón de{" "}
-              <span className="font-mono font-medium text-foreground">{plateNumber}</span> ha sido configurada.
+              <span className="font-plate text-foreground">{plateNumber}</span> ha sido configurada.
             </p>
             <Button
               size="lg"
               onClick={handleContinueToInbox}
               disabled={isSubmitting}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isSubmitting ? "Cargando..." : "Continuar al buzón"}
             </Button>
@@ -225,11 +225,11 @@ function SetupContent() {
     <main className="min-h-screen bg-background px-4 py-12 md:py-20">
       <div className="mx-auto max-w-lg">
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Mensajes recibidos
           </h1>
           <p className="text-muted-foreground">
-            Buzón de la placa <span className="font-mono font-medium text-foreground">{plateNumber}</span>
+            Buzón de la placa <span className="font-plate text-foreground">{plateNumber}</span>
           </p>
         </div>
 
@@ -240,12 +240,12 @@ function SetupContent() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {messages.map((msg) => (
-              <Card key={msg.id} className="rounded-xl">
+            {messages.map((msg, index) => (
+              <Card key={msg.id} className={index === 0 ? "plate-frame" : "rounded-xl"}>
                 <CardContent className="pt-6">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="font-medium text-foreground">{msg.alias}</span>
-                    <span className="text-sm text-muted-foreground">{msg.fecha}</span>
+                    <span className="font-label text-sm text-muted-foreground">{msg.fecha}</span>
                   </div>
                   <p className="mb-3 text-foreground">{msg.mensaje}</p>
                   {msg.contacto && <p className="text-sm text-muted-foreground">Contacto: {msg.contacto}</p>}

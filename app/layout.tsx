@@ -1,17 +1,23 @@
 import type { Metadata } from 'next'
-import { Inter, Roboto_Mono } from 'next/font/google'
+import { Inter, Archivo, Archivo_Black } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-inter"
 });
-const robotoMono = Roboto_Mono({ 
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-roboto-mono"
+  weight: ["600", "700"],
+  variable: "--font-archivo",
+});
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-archivo-black",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +51,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="es" className="bg-background">
-        <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased bg-background text-foreground`}>
+        <body className={`${inter.variable} ${archivo.variable} ${archivoBlack.variable} font-sans antialiased bg-background text-foreground`}>
           {children}
           <Analytics />
         </body>

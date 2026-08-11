@@ -85,7 +85,7 @@ export function MessagesTable({
           <TableBody>
             {result.messages.map((msg) => (
               <TableRow key={msg.id}>
-                <TableCell className="font-mono">{msg.plateNumber}</TableCell>
+                <TableCell className="font-plate">{msg.plateNumber}</TableCell>
                 <TableCell>{msg.alias ?? "—"}</TableCell>
                 <TableCell className="max-w-xs truncate">{msg.message}</TableCell>
                 <TableCell>{msg.contact ?? "—"}</TableCell>

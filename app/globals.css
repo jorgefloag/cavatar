@@ -3,88 +3,96 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* CAVATAR Bold Urban Design System */
-/* Dark background with strong yellow accent */
+/* CAVATAR — identidad visual inspirada en placas de Costa Rica */
+/* Fondo blanco, carbón como color dominante, azul y rojo como acentos disciplinados */
 
 :root {
-  /* Dark theme as default - urban, bold aesthetic */
-  --background: #0A0A0A;
-  --foreground: #FFFFFF;
-  --card: #111111;
-  --card-foreground: #FFFFFF;
-  --popover: #111111;
-  --popover-foreground: #FFFFFF;
-  /* Strong yellow accent */
-  --primary: #FFD600;
-  --primary-foreground: #0A0A0A;
-  --secondary: #1A1A1A;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1A1A1A;
-  --muted-foreground: #888888;
-  --accent: #FFD600;
-  --accent-foreground: #0A0A0A;
-  --destructive: #FF4444;
+  --background: #FFFFFF;
+  --foreground: #0B1220;
+  --card: #FFFFFF;
+  --card-foreground: #0B1220;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1220;
+  /* Azul de placa — reservado para el marco de placa y focos puntuales (ring de foco, CTA principal) */
+  --primary: #1839A6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F7F5;
+  --secondary-foreground: #0B1220;
+  --muted: #F7F7F5;
+  --muted-foreground: #5C5F66;
+  /* Gris terciario — timestamps y metadatos, un nivel más sutil que muted-foreground */
+  --muted-foreground-subtle: #B8BAB2;
+  /* accent es el tinte de hover de botones ghost/dropdown en shadcn — se dispara constantemente,
+     así que se queda neutro. El rojo de marca NO vive acá (ver --destructive). */
+  --accent: #F7F7F5;
+  --accent-foreground: #0B1220;
+  /* Rojo de placa — reservado: línea de marca del hero y estados de error/alerta reales */
+  --destructive: #CE1126;
   --destructive-foreground: #FFFFFF;
-  --border: #2A2A2A;
-  --input: #1A1A1A;
-  --ring: #FFD600;
-  /* Status green - for system indicators only */
+  --border: #E4E4E1;
+  --input: #E4E4E1;
+  --ring: #1839A6;
+  /* Verde de estado del sistema — excepción funcional, no es color de marca */
   --status: #00FF88;
-  --chart-1: #FFD600;
-  --chart-2: #E6C000;
-  --chart-3: #CCB000;
-  --chart-4: #B39A00;
-  --chart-5: #998400;
+  --chart-1: #1839A6;
+  --chart-2: #5C5F66;
+  --chart-3: #8A8D93;
+  --chart-4: #B8BAB2;
+  --chart-5: #E4E4E1;
   --radius: 0.5rem;
-  --sidebar: #0A0A0A;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #FFD600;
-  --sidebar-primary-foreground: #0A0A0A;
-  --sidebar-accent: #1A1A1A;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #2A2A2A;
-  --sidebar-ring: #FFD600;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0B1220;
+  --sidebar-primary: #1839A6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F7F7F5;
+  --sidebar-accent-foreground: #0B1220;
+  --sidebar-border: #E4E4E1;
+  --sidebar-ring: #1839A6;
 }
 
 .dark {
-  --background: #0A0A0A;
-  --foreground: #FFFFFF;
-  --card: #111111;
-  --card-foreground: #FFFFFF;
-  --popover: #111111;
-  --popover-foreground: #FFFFFF;
-  --primary: #FFD600;
-  --primary-foreground: #0A0A0A;
-  --secondary: #1A1A1A;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1A1A1A;
-  --muted-foreground: #888888;
-  --accent: #FFD600;
-  --accent-foreground: #0A0A0A;
-  --destructive: #FF4444;
+  --background: #FFFFFF;
+  --foreground: #0B1220;
+  --card: #FFFFFF;
+  --card-foreground: #0B1220;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1220;
+  --primary: #1839A6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F7F5;
+  --secondary-foreground: #0B1220;
+  --muted: #F7F7F5;
+  --muted-foreground: #5C5F66;
+  --muted-foreground-subtle: #B8BAB2;
+  --accent: #F7F7F5;
+  --accent-foreground: #0B1220;
+  --destructive: #CE1126;
   --destructive-foreground: #FFFFFF;
-  --border: #2A2A2A;
-  --input: #1A1A1A;
-  --ring: #FFD600;
+  --border: #E4E4E1;
+  --input: #E4E4E1;
+  --ring: #1839A6;
   --status: #00FF88;
-  --chart-1: #FFD600;
-  --chart-2: #E6C000;
-  --chart-3: #CCB000;
-  --chart-4: #B39A00;
-  --chart-5: #998400;
-  --sidebar: #0A0A0A;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #FFD600;
-  --sidebar-primary-foreground: #0A0A0A;
-  --sidebar-accent: #1A1A1A;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #2A2A2A;
-  --sidebar-ring: #FFD600;
+  --chart-1: #1839A6;
+  --chart-2: #5C5F66;
+  --chart-3: #8A8D93;
+  --chart-4: #B8BAB2;
+  --chart-5: #E4E4E1;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0B1220;
+  --sidebar-primary: #1839A6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F7F7F5;
+  --sidebar-accent-foreground: #0B1220;
+  --sidebar-border: #E4E4E1;
+  --sidebar-ring: #1839A6;
 }
 
 @theme inline {
   --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
-  --font-mono: var(--font-roboto-mono), 'Roboto Mono', monospace;
+  /* Archivo Black — wordmark "CAVATAR" y números de placa (buscador, tarjetas de mensaje) */
+  --font-plate: var(--font-archivo-black), 'Archivo Black', sans-serif;
+  /* Archivo 600/700 — labels, navegación, estados, timestamps */
+  --font-label: var(--font-archivo), 'Archivo', sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-status: var(--status);
@@ -98,6 +106,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-muted-foreground-subtle: var(--muted-foreground-subtle);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -131,4 +140,38 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Marco de placa y línea de marca — deliberadamente FUERA de @layer, así ganan
+   siempre sobre las utilidades de Tailwind (@layer utilities tiene prioridad
+   más alta que @layer components sin importar el orden en el archivo; una
+   regla sin capa le gana a cualquier regla con capa). Sin esto, el `border`
+   de 1px que ya traen Input/Card por defecto pisaría este borde de 5px. */
+.plate-frame {
+  position: relative;
+  border: 5px solid var(--primary) !important;
+  border-radius: var(--radius-lg);
+}
+.plate-frame::before,
+.plate-frame::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--primary);
+}
+.plate-frame::before {
+  left: 12px;
+}
+.plate-frame::after {
+  right: 12px;
+}
+
+.brand-line {
+  width: 120px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--destructive);
 }

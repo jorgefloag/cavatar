@@ -20,7 +20,7 @@ export default function VerifiedPage() {
           <div className="mb-6 flex justify-center">
             <BadgeCheck className="h-16 w-16 text-foreground" strokeWidth={1.5} />
           </div>
-          <h1 className="mb-4 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
             Perfil verificado
           </h1>
           <p className="text-muted-foreground">

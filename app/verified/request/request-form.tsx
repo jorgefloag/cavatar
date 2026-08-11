@@ -44,7 +44,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
           <div className="mb-8 flex justify-center">
             <CheckCircle2 className="h-16 w-16 text-foreground" strokeWidth={1.5} />
           </div>
-          <h1 className="mb-4 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
             Tu solicitud fue enviada correctamente.
           </h1>
           <p className="mb-8 text-muted-foreground">
@@ -74,7 +74,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
         </Link>
 
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Solicitar perfil verificado
           </h1>
           <p className="text-muted-foreground">
@@ -156,14 +156,14 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
             </div>
 
             {errorMessage && (
-              <p className="text-center text-sm text-red-500">{errorMessage}</p>
+              <p className="text-center text-sm text-destructive">{errorMessage}</p>
             )}
 
             <Button
               type="submit"
               size="lg"
               disabled={isLoading || !acceptedPrivacy}
-              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isLoading ? "Enviando..." : "Enviar solicitud"}
             </Button>

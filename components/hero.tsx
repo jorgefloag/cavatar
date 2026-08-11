@@ -23,15 +23,20 @@ export function Hero() {
     <section className="flex min-h-screen items-center justify-center overflow-x-hidden px-6 py-20">
       <div className="mx-auto w-full max-w-2xl text-center">
         {/* Logo / Brand - Primary visual element */}
-        <div className="mb-6">
-          <span className="block text-5xl font-black tracking-tight text-foreground sm:text-6xl md:text-8xl lg:text-9xl">
+        <div className="mb-3">
+          <span className="block font-plate text-5xl tracking-tight text-foreground sm:text-6xl md:text-8xl lg:text-9xl">
             CAVATAR
           </span>
         </div>
 
+        {/* Brand line - red, disciplined use */}
+        <div className="mb-8 flex justify-center">
+          <span className="brand-line" />
+        </div>
+
         {/* Headlines - Bold, secondary prominence */}
         <div className="mb-10">
-          <h1 className="mb-4 text-2xl font-black uppercase leading-[0.9] tracking-tight text-foreground sm:text-3xl md:text-5xl lg:text-6xl">
+          <h1 className="mb-4 font-label text-2xl uppercase leading-[0.9] tracking-tight text-foreground sm:text-3xl md:text-5xl lg:text-6xl">
             ALGUIEN TE ESCRIBIÓ
           </h1>
           <p className="text-lg font-medium text-muted-foreground md:text-xl">
@@ -47,15 +52,15 @@ export function Hero() {
               placeholder="ABC123"
               value={plateNumber}
               onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
-              className="h-20 rounded-lg border-2 border-border bg-input text-center font-mono text-3xl uppercase tracking-[0.2em] text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:ring-0 md:text-4xl"
+              className="plate-frame h-20 bg-input text-center font-plate text-3xl uppercase tracking-[0.2em] text-foreground placeholder:text-muted-foreground/40 focus:ring-0 md:text-4xl"
               maxLength={10}
             />
           </div>
-          <Button 
+          <Button
             type="submit"
-            size="lg" 
+            size="lg"
             disabled={!plateNumber.trim()}
-            className="h-14 w-full rounded-lg bg-primary px-8 text-lg font-black uppercase tracking-wide text-primary-foreground transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:opacity-40 md:h-16 md:text-xl"
+            className="h-14 w-full rounded-lg bg-primary px-8 font-label text-lg uppercase tracking-wide text-primary-foreground transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] md:h-16 md:text-xl"
           >
             Ver mensajes
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -63,8 +68,9 @@ export function Hero() {
         </form>
 
         {/* Tagline */}
-        <p className="mb-10 font-mono text-sm text-muted-foreground">
-          Tienes una nueva alerta, un nuevo saludo, o un nuevo recado
+        <p className="mb-10 text-sm text-muted-foreground">
+          Tienes una nueva alerta, un nuevo saludo, una nueva notificación, un nuevo recado... quizás hasta un nuevo
+          descuento o regalo, en el buzón de tu placa.
         </p>
 
         {/* Send Message Action - Equal visual prominence */}
@@ -72,11 +78,11 @@ export function Hero() {
           <p className="mb-4 text-lg font-medium text-muted-foreground">
             O envía un mensaje a otra placa
           </p>
-          <Button 
+          <Button
             asChild
-            variant="outline" 
-            size="lg" 
-            className="h-14 w-full rounded-lg border-2 border-primary bg-transparent px-8 text-lg font-black uppercase tracking-wide text-primary transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98] md:h-16 md:text-xl"
+            variant="outline"
+            size="lg"
+            className="h-14 w-full rounded-lg border-2 border-primary bg-transparent px-8 font-label text-lg uppercase tracking-wide text-primary transition-all hover:scale-[1.02] hover:bg-primary hover:text-primary-foreground active:scale-[0.98] md:h-16 md:text-xl"
           >
             <Link href="/send">
               Enviar mensaje
@@ -85,10 +91,10 @@ export function Hero() {
           </Button>
         </div>
 
-        {/* System status - green for active indicators */}
+        {/* System status - green stays as a functional exception, not a brand color */}
         <div className="mt-16 flex items-center justify-center gap-3 text-muted-foreground">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-status" />
-          <span className="font-mono text-xs uppercase tracking-widest">Sistema activo</span>
+          <span className="font-label text-xs uppercase tracking-widest">Sistema activo</span>
         </div>
       </div>
     </section>

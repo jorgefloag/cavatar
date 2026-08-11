@@ -88,7 +88,7 @@ export function DashboardView({
         </Link>
 
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Perfil verificado
           </h1>
           <p className="text-muted-foreground">{userEmail}</p>
@@ -96,14 +96,14 @@ export function DashboardView({
 
         <div className="mb-8 rounded-lg border border-border bg-card p-8 text-center">
           <div className="mb-6 flex justify-center">{statusDisplay.icon}</div>
-          <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground">{statusDisplay.title}</h2>
+          <h2 className="mb-3 text-xl font-bold text-foreground">{statusDisplay.title}</h2>
           <p className="mb-6 text-muted-foreground">{statusDisplay.description}</p>
           {statusDisplay.action}
         </div>
 
         {request && status !== "none" && (
           <div className="mb-8 rounded-lg border border-border bg-card p-6">
-            <h3 className="mb-4 font-mono text-sm font-medium tracking-wide text-muted-foreground">
+            <h3 className="mb-4 font-label text-sm tracking-wide text-muted-foreground">
               DETALLES DE LA SOLICITUD
             </h3>
             <div className="flex flex-col gap-3 text-sm">

@@ -119,7 +119,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
           <TableBody>
             {filtered.map((claim) => (
               <TableRow key={claim.id}>
-                <TableCell className="font-mono">{claim.plateNumber}</TableCell>
+                <TableCell className="font-plate">{claim.plateNumber}</TableCell>
                 <TableCell>{claim.email}</TableCell>
                 <TableCell>{claim.vehicleBrand}</TableCell>
                 <TableCell className="text-muted-foreground">{claim.carName || "—"}</TableCell>

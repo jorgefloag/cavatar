@@ -140,7 +140,7 @@ function InboxContent() {
           </Link>
 
           <div className="mb-10">
-            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+            <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
               Consultar tu buzón
             </h1>
             <p className="text-muted-foreground">
@@ -162,7 +162,7 @@ function InboxContent() {
                 onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                 required
                 disabled={isSubmitting}
-                className="rounded-xl border-border bg-background py-6 font-mono text-lg uppercase tracking-wider text-foreground placeholder:text-muted-foreground focus:border-foreground focus:ring-foreground"
+                className="plate-frame bg-background py-6 font-plate text-lg uppercase tracking-wider text-foreground placeholder:text-muted-foreground focus:ring-foreground"
               />
             </div>
 
@@ -170,7 +170,7 @@ function InboxContent() {
               type="submit"
               size="lg"
               disabled={isSubmitting || !plateNumber.trim()}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isSubmitting ? "Buscando..." : "Continuar"}
             </Button>
@@ -194,12 +194,12 @@ function InboxContent() {
           </button>
 
           <div className="mb-10">
-            <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+            <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
               Ingresa tu clave de acceso
             </h1>
             <p className="text-muted-foreground">
               Para acceder al buzón de{" "}
-              <span className="font-mono font-medium text-foreground">{currentPlate}</span>
+              <span className="font-plate text-foreground">{currentPlate}</span>
             </p>
           </div>
 
@@ -236,7 +236,7 @@ function InboxContent() {
               type="submit"
               size="lg"
               disabled={isSubmitting || !password.trim() || isBlocked}
-              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isSubmitting ? "Verificando..." : "Ingresar"}
             </Button>
@@ -261,7 +261,7 @@ function InboxContent() {
 
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Clock className="mb-6 h-16 w-16 text-muted-foreground/50" strokeWidth={1.5} />
-            <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground md:text-2xl">
+            <h2 className="mb-3 text-xl font-bold text-foreground md:text-2xl">
               Tu placa fue aprobada
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
@@ -298,7 +298,7 @@ function InboxContent() {
           {/* No claim state */}
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Car className="mb-6 h-16 w-16 text-muted-foreground/50" strokeWidth={1.5} />
-            <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground md:text-2xl">
+            <h2 className="mb-3 text-xl font-bold text-foreground md:text-2xl">
               Esta placa aún no ha sido reclamada
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
@@ -344,7 +344,7 @@ function InboxContent() {
           {/* Pending State */}
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Clock className="mb-6 h-16 w-16 text-muted-foreground/50" strokeWidth={1.5} />
-            <h2 className="mb-3 font-mono text-xl font-bold tracking-wide text-foreground md:text-2xl">
+            <h2 className="mb-3 text-xl font-bold text-foreground md:text-2xl">
               Tu solicitud está en revisión
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
@@ -381,7 +381,7 @@ function InboxContent() {
           {/* Header */}
           <div className="mb-10">
             <div className="mb-3 flex items-center justify-between">
-              <h1 className="font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+              <h1 className="text-2xl font-bold text-foreground md:text-3xl">
                 {carName ? `Buzón de ${carName}` : "Mensajes recibidos"}
               </h1>
               <Button
@@ -395,7 +395,7 @@ function InboxContent() {
             </div>
             <p className="text-muted-foreground">
               Revisa los mensajes enviados a tu placa{" "}
-              <span className="font-mono font-medium text-foreground">{currentPlate}</span>
+              <span className="font-plate text-foreground">{currentPlate}</span>
             </p>
           </div>
 
@@ -407,12 +407,12 @@ function InboxContent() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {messages.map((msg) => (
-                <Card key={msg.id} className="rounded-xl">
+              {messages.map((msg, index) => (
+                <Card key={msg.id} className={index === 0 ? "plate-frame" : "rounded-xl"}>
                   <CardContent className="pt-6">
                     <div className="mb-3 flex items-center justify-between">
                       <span className="font-medium text-foreground">{msg.alias}</span>
-                      <span className="text-sm text-muted-foreground">{msg.fecha}</span>
+                      <span className="font-label text-sm text-muted-foreground">{msg.fecha}</span>
                     </div>
                     <p className="mb-3 text-foreground">{msg.mensaje}</p>
                     {msg.contacto && (

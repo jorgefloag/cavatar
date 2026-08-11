@@ -46,7 +46,7 @@ export function FAQ() {
       <div className="mx-auto max-w-2xl">
         {/* Section header */}
         <div className="mb-14 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+          <h2 className="font-label text-3xl uppercase tracking-tight text-foreground md:text-4xl">
             FAQ
           </h2>
         </div>
@@ -59,9 +59,9 @@ export function FAQ() {
               value={`item-${index}`}
               className="border-border py-2"
             >
-              <AccordionTrigger className="text-left text-base font-bold uppercase tracking-tight hover:text-primary hover:no-underline">
+              <AccordionTrigger className="font-label text-left text-base uppercase tracking-tight hover:text-primary hover:no-underline">
                 <span className="flex items-center gap-4">
-                  <span className="font-mono text-sm text-primary">
+                  <span className="font-label text-sm text-primary">
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   {faq.question}

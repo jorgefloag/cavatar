@@ -16,12 +16,12 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-8 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">Dashboard</h1>
+      <h1 className="mb-8 text-2xl font-bold text-foreground md:text-3xl">Dashboard</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <div key={card.label} className="rounded-lg border border-border bg-card p-6">
             <p className="text-sm text-muted-foreground">{card.label}</p>
-            <p className="mt-2 font-mono text-3xl font-bold text-foreground">{card.value}</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">{card.value}</p>
           </div>
         ))}
       </div>

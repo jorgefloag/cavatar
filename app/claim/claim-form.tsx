@@ -59,7 +59,7 @@ export function ClaimForm({
           <div className="mb-8 flex justify-center">
             <CheckCircle2 className="h-16 w-16 text-foreground" strokeWidth={1.5} />
           </div>
-          <h1 className="mb-4 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
             Tu solicitud fue enviada correctamente.
           </h1>
           <p className="mb-8 text-muted-foreground">
@@ -94,7 +94,7 @@ export function ClaimForm({
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Reclamar placa
           </h1>
           <p className="text-muted-foreground">
@@ -104,7 +104,7 @@ export function ClaimForm({
 
         {/* Payment info */}
         <div className="mb-10 rounded-xl border border-border bg-muted/30 p-5">
-          <p className="font-mono text-2xl font-bold text-foreground">₡5,000 / año</p>
+          <p className="text-2xl font-bold text-foreground">₡5,000 / año</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Reclamar tu placa activa tu buzón privado por 1 año.
           </p>
@@ -112,7 +112,7 @@ export function ClaimForm({
           {sinpePhoneNumber && (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Pagá vía SINPE Móvil a:</p>
-              <p className="font-mono text-lg font-bold tracking-wide text-foreground">{sinpePhoneNumber}</p>
+              <p className="font-label text-lg tracking-wide text-foreground">{sinpePhoneNumber}</p>
             </div>
           )}
 
@@ -145,7 +145,7 @@ export function ClaimForm({
                 onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                 placeholder="ABC-123"
                 required
-                className="h-12 rounded-lg font-mono text-base uppercase tracking-wider"
+                className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"
               />
             </Field>
 
@@ -212,14 +212,14 @@ export function ClaimForm({
             </div>
 
             {errorMessage && (
-              <p className="text-center text-sm text-red-500">{errorMessage}</p>
+              <p className="text-center text-sm text-destructive">{errorMessage}</p>
             )}
 
             <Button
               type="submit"
               size="lg"
               disabled={isLoading || !acceptedPrivacy}
-              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
             >
               {isLoading ? "Enviando..." : "Enviar solicitud"}
             </Button>

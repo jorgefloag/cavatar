@@ -112,7 +112,7 @@ function RegisterForm() {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             {step === "form" ? "Crear cuenta" : "Verifica tu correo"}
           </h1>
           <p className="text-muted-foreground">
@@ -182,7 +182,7 @@ function RegisterForm() {
               </div>
 
               {errorMessage && (
-                <p className="text-center text-sm text-red-500">{errorMessage}</p>
+                <p className="text-center text-sm text-destructive">{errorMessage}</p>
               )}
 
               <div id="clerk-captcha" />
@@ -191,7 +191,7 @@ function RegisterForm() {
                 type="submit"
                 size="lg"
                 disabled={isLoading || !acceptedTerms}
-                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
               >
                 {isLoading ? "Creando cuenta..." : "Crear cuenta"}
               </Button>
@@ -215,14 +215,14 @@ function RegisterForm() {
               </Field>
 
               {errorMessage && (
-                <p className="text-center text-sm text-red-500">{errorMessage}</p>
+                <p className="text-center text-sm text-destructive">{errorMessage}</p>
               )}
 
               <Button
                 type="submit"
                 size="lg"
                 disabled={isLoading}
-                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
               >
                 {isLoading ? "Verificando..." : "Verificar código"}
               </Button>

@@ -192,7 +192,7 @@ export default function SendPage() {
           <div className="mb-8 flex justify-center">
             <CheckCircle2 className="h-16 w-16 text-foreground" strokeWidth={1.5} />
           </div>
-          <h1 className="mb-4 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
             Mensaje enviado correctamente
           </h1>
           <p className="mb-4 text-muted-foreground">
@@ -244,7 +244,7 @@ export default function SendPage() {
 
         {/* Header */}
         <div className="mb-12">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Enviar mensaje
           </h1>
           <p className="text-muted-foreground">
@@ -323,7 +323,7 @@ export default function SendPage() {
                 onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                 placeholder="ABC-123"
                 required
-                className="h-12 rounded-lg font-mono text-base uppercase tracking-wider"
+                className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"
               />
             </Field>
 
@@ -396,7 +396,7 @@ export default function SendPage() {
             </div>
 
             {errorMessage && (
-              <p className="text-center text-sm text-red-500">{errorMessage}</p>
+              <p className="text-center text-sm text-destructive">{errorMessage}</p>
             )}
 
             <div className="mt-2">
@@ -404,7 +404,7 @@ export default function SendPage() {
                 type="submit"
                 size="lg"
                 disabled={isButtonDisabled}
-                className="w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl disabled:opacity-50"
+                className="w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
               >
                 {isCheckingVerification ? "Cargando..." : isLoading ? "Enviando..." : "Enviar mensaje"}
               </Button>

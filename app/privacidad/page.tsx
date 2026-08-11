@@ -20,7 +20,7 @@ export default function PrivacidadPage() {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="mb-3 font-mono text-2xl font-bold tracking-wide text-foreground md:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Aviso de Privacidad
           </h1>
           <p className="text-sm text-muted-foreground">Última actualización: 9 de agosto de 2026</p>
@@ -35,7 +35,7 @@ export default function PrivacidadPage() {
         </div>
 
         {/* Content */}
-        <div className="flex flex-col gap-8 text-muted-foreground [&_h2]:mb-3 [&_h2]:font-mono [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_p]:leading-relaxed [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:p-2 [&_th]:text-left [&_th]:font-mono [&_th]:text-xs [&_th]:uppercase [&_th]:text-foreground [&_td]:border [&_td]:border-border [&_td]:p-2">
+        <div className="flex flex-col gap-8 text-muted-foreground [&_h2]:mb-3 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_p]:leading-relaxed [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:p-2 [&_th]:text-left [&_th]:font-label [&_th]:text-xs [&_th]:uppercase [&_th]:text-foreground [&_td]:border [&_td]:border-border [&_td]:p-2">
           <section>
             <h2>1. Responsable del tratamiento</h2>
             <p>
