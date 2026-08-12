@@ -5,6 +5,7 @@ import { AdminNav } from "./admin-nav"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const email = await getCurrentUserEmail()
+  if (!email) redirect("/admin/login")
   if (!isAdminEmail(email)) redirect("/")
 
   return (
