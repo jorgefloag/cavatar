@@ -13,6 +13,7 @@ const links = [
   { href: "/admin/verified", label: "Perfiles verificados" },
   { href: "/admin/messages", label: "Mensajes" },
   { href: "/admin/banners", label: "Banners" },
+  { href: "/admin/reports", label: "Reportes" },
 ]
 
 export function AdminNav({ userEmail }: { userEmail: string }) {
