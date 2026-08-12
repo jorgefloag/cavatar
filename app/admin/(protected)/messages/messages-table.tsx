@@ -86,7 +86,15 @@ export function MessagesTable({
             {result.messages.map((msg) => (
               <TableRow key={msg.id}>
                 <TableCell className="font-plate">{msg.plateNumber}</TableCell>
-                <TableCell>{msg.alias ?? "—"}</TableCell>
+                <TableCell>
+                  {msg.isBroadcast ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      CAVATAR
+                    </span>
+                  ) : (
+                    (msg.alias ?? "—")
+                  )}
+                </TableCell>
                 <TableCell className="max-w-xs truncate">{msg.message}</TableCell>
                 <TableCell>{msg.contact ?? "—"}</TableCell>
                 <TableCell>{new Date(msg.createdAt).toLocaleString("es-MX")}</TableCell>

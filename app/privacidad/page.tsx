@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Aviso de Privacidad
           </h1>
-          <p className="text-sm text-muted-foreground">Última actualización: 9 de agosto de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: 12 de agosto de 2026</p>
         </div>
 
         {/* Draft notice */}
@@ -57,7 +57,9 @@ export default function PrivacidadPage() {
                 <strong className="text-foreground">Para reclamar una placa</strong> (/claim): correo electrónico,
                 marca del vehículo, y el número de placa que estás reclamando. Opcionalmente, el nombre o apodo de
                 tu carro, si le tenés uno — no se usa para verificar tu identidad, es solo información de producto.
-                Los usamos para verificar tu solicitud y contactarte sobre su estado.
+                Los usamos para verificar tu solicitud y contactarte sobre su estado. Una vez que tu placa está
+                aprobada, también podemos usar la marca del vehículo para decidir a quién le llega un mensaje
+                oficial de CAVATAR (ver "Mensajes oficiales de CAVATAR" más abajo).
               </li>
               <li>
                 <strong className="text-foreground">Para enviar un mensaje a una placa</strong> (/send): el mensaje
@@ -73,6 +75,14 @@ export default function PrivacidadPage() {
               <li>
                 <strong className="text-foreground">Para acceder al buzón de una placa reclamada</strong>: una
                 contraseña que vos definís, que guardamos con hash (bcrypt) — nunca la contraseña en sí.
+              </li>
+              <li>
+                <strong className="text-foreground">Mensajes oficiales de CAVATAR</strong>: el administrador de
+                CAVATAR puede enviar mensajes operativos (avisos del servicio, no publicidad de terceros) a todas
+                las placas aprobadas o a un grupo filtrado por marca de vehículo, usando el dato de marca que
+                registraste al reclamar tu placa. Estos mensajes se identifican como oficiales dentro de tu buzón —
+                no se te contacta por correo, WhatsApp ni ningún otro canal a partir de esto, y solo los ves si
+                entrás a tu buzón con tu contraseña, igual que cualquier otro mensaje.
               </li>
             </ul>
             <p className="mt-3">
@@ -101,7 +111,8 @@ export default function PrivacidadPage() {
               </li>
               <li>
                 <strong className="text-foreground">El operador de CAVATAR</strong>: como administrador, revisamos
-                solicitudes de reclamo y de perfil verificado, y moderamos mensajes reportados.
+                solicitudes de reclamo y de perfil verificado, moderamos mensajes reportados, y podemos originar
+                mensajes oficiales dirigidos a tu buzón (ver sección 2).
               </li>
               <li>
                 <strong className="text-foreground">Proveedores externos</strong> que procesan datos en nuestro

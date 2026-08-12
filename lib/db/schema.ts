@@ -24,12 +24,23 @@ export const claimRequests = pgTable(
   (t) => [unique().on(t.plateNumber)],
 )
 
+export const broadcasts = pgTable("broadcasts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminEmail: text("admin_email").notNull(),
+  message: text("message").notNull(),
+  brandFilter: text("brand_filter"),
+  recipientCount: integer("recipient_count").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  undoneAt: timestamp("undone_at", { withTimezone: true }),
+})
+
 export const messages = pgTable("messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   plateNumber: text("plate_number").notNull(),
   alias: text("alias"),
   message: text("message").notNull(),
   contact: text("contact"),
+  broadcastId: uuid("broadcast_id").references(() => broadcasts.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

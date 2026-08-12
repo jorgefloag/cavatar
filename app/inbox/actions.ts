@@ -16,6 +16,7 @@ export interface MessageDTO {
   contacto: string
   fecha: string
   plate_number: string
+  isBroadcast: boolean
 }
 
 export type LookupResult =
@@ -157,6 +158,7 @@ export async function verifyPlatePassword(
         year: "numeric",
       }),
       plate_number: msg.plateNumber,
+      isBroadcast: msg.broadcastId !== null,
     }))
 
   return { success: true, messages: formatted, carName: claim.carName }

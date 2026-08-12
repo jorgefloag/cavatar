@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2 } from "lucide-react"
+import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2, BadgeCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -415,10 +415,26 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
           ) : (
             <div className="flex flex-col gap-4">
               {messages.map((msg, index) => (
-                <Card key={msg.id} className={index === 0 ? "plate-frame" : "rounded-xl"}>
+                <Card
+                  key={msg.id}
+                  className={
+                    index === 0
+                      ? "plate-frame"
+                      : msg.isBroadcast
+                        ? "rounded-xl border-primary/40 bg-primary/5"
+                        : "rounded-xl"
+                  }
+                >
                   <CardContent className="pt-6">
                     <div className="mb-3 flex items-center justify-between">
-                      <span className="font-medium text-foreground">{msg.alias}</span>
+                      {msg.isBroadcast ? (
+                        <span className="inline-flex items-center gap-1.5 font-label text-xs uppercase tracking-wide text-primary">
+                          <BadgeCheck className="h-4 w-4" />
+                          CAVATAR · Oficial
+                        </span>
+                      ) : (
+                        <span className="font-medium text-foreground">{msg.alias}</span>
+                      )}
                       <span className="font-label text-sm text-muted-foreground">{msg.fecha}</span>
                     </div>
                     <p className="mb-3 text-foreground">{msg.mensaje}</p>

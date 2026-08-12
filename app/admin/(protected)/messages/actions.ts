@@ -14,6 +14,7 @@ export interface MessageAdminDTO {
   message: string
   contact: string | null
   createdAt: string
+  isBroadcast: boolean
 }
 
 export interface MessagesPage {
@@ -51,6 +52,7 @@ export async function fetchMessages({ page, plate }: { page: number; plate?: str
       message: row.message,
       contact: row.contact,
       createdAt: row.createdAt.toISOString(),
+      isBroadcast: row.broadcastId !== null,
     })),
     totalCount,
     page: safePage,
