@@ -10,6 +10,36 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 
+function Step({
+  number,
+  title,
+  description,
+  isLast = false,
+  children,
+}: {
+  number: number
+  title: string
+  description?: string
+  isLast?: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground font-label text-sm text-background">
+          {number}
+        </div>
+        {!isLast && <div className="mt-2 w-px flex-1 bg-border" />}
+      </div>
+      <div className={isLast ? "flex-1" : "flex-1 pb-8"}>
+        <h2 className="font-label text-sm uppercase tracking-wide text-foreground">{title}</h2>
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        {children && <div className="mt-3">{children}</div>}
+      </div>
+    </div>
+  )
+}
+
 export function ClaimForm({
   sinpePhoneNumber,
   whatsappPhoneNumber,
@@ -102,52 +132,79 @@ export function ClaimForm({
           </p>
         </div>
 
-        {/* Payment info */}
-        <div className="mb-10 rounded-xl border border-border bg-muted/30 p-5">
-          <p className="text-2xl font-bold text-foreground">₡5,000 / año</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Reclamar tu placa activa tu buzón privado por 1 año.
-          </p>
-
-          {sinpePhoneNumber && (
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground">Pagá vía SINPE Móvil a:</p>
-              <p className="font-label text-lg tracking-wide text-foreground">{sinpePhoneNumber}</p>
-            </div>
-          )}
-
-          {whatsappPhoneNumber && (
-            <a
-              href={`https://wa.me/${whatsappPhoneNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-all hover:bg-foreground/90"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Enviar comprobante por WhatsApp
-            </a>
-          )}
-
-          <p className="mt-4 text-xs text-muted-foreground">
-            Revisamos el pago antes de activar tu buzón.
-          </p>
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <FieldGroup className="gap-6">
-            <Field>
-              <FieldLabel htmlFor="plate">Número de placa</FieldLabel>
-              <Input
-                id="plate"
-                type="text"
-                value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
-                placeholder="ABC-123"
-                required
-                className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"
+            {/* Steps: plate first, then payment instructions, all driven by plateNumber */}
+            <div className="mb-2 flex flex-col">
+              <Step number={1} title="Ingresá tu placa">
+                <Field>
+                  <FieldLabel htmlFor="plate">Número de placa</FieldLabel>
+                  <Input
+                    id="plate"
+                    type="text"
+                    value={plateNumber}
+                    onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+                    placeholder="ABC-123"
+                    required
+                    className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"
+                  />
+                </Field>
+              </Step>
+
+              <Step number={2} title="Pagá vía SINPE">
+                <div className="rounded-xl border border-border bg-muted/30 p-5">
+                  <p className="text-2xl font-bold text-foreground">₡5,000 / año</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Activa tu buzón privado por 1 año.</p>
+
+                  {sinpePhoneNumber && (
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground">Pagá vía SINPE Móvil a:</p>
+                      <p className="font-label text-lg tracking-wide text-foreground">{sinpePhoneNumber}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 rounded-lg border border-dashed border-border p-3">
+                    <p className="text-sm text-muted-foreground">
+                      En el campo de <strong className="text-foreground">Detalle / Motivo</strong> de la
+                      transferencia, escribí tu placa:
+                    </p>
+                    {plateNumber ? (
+                      <p className="mt-1 font-plate text-lg uppercase tracking-wider text-foreground">
+                        {plateNumber}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Completá tu placa en el paso 1 para ver el detalle exacto.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Step>
+
+              <Step number={3} title="Enviá el comprobante" description="Por WhatsApp, nunca lo subas a CAVATAR.">
+                {whatsappPhoneNumber && (
+                  <a
+                    href={`https://wa.me/${whatsappPhoneNumber}?text=${encodeURIComponent(
+                      plateNumber ? `Comprobante de pago para la placa ${plateNumber}` : "Comprobante de pago",
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-all hover:bg-foreground/90"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Enviar comprobante por WhatsApp
+                  </a>
+                )}
+              </Step>
+
+              <Step
+                number={4}
+                title="Esperá aprobación"
+                description="Revisamos tu pago y tu solicitud antes de activar tu buzón."
+                isLast
               />
-            </Field>
+            </div>
 
             <Field>
               <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
