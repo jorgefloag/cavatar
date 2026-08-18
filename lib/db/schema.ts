@@ -3,6 +3,7 @@ import { pgTable, pgEnum, uuid, text, integer, boolean, timestamp, unique } from
 export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved", "rejected"])
 export const verifiedStatusEnum = pgEnum("verified_status", ["pending", "approved", "rejected"])
 export const bannerLocationEnum = pgEnum("banner_location", ["landing", "send", "inbox"])
+export const broadcastSourceEnum = pgEnum("broadcast_source", ["all", "brand", "list"])
 
 export const claimRequests = pgTable(
   "claim_requests",
@@ -28,8 +29,10 @@ export const broadcasts = pgTable("broadcasts", {
   id: uuid("id").primaryKey().defaultRandom(),
   adminEmail: text("admin_email").notNull(),
   message: text("message").notNull(),
+  source: broadcastSourceEnum("source").notNull().default("all"),
   brandFilter: text("brand_filter"),
   recipientCount: integer("recipient_count").notNull(),
+  recipientPlates: text("recipient_plates").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   undoneAt: timestamp("undone_at", { withTimezone: true }),
 })
