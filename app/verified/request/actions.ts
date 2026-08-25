@@ -4,6 +4,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { verifiedRequests } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
+import { sendAdminNewVerifiedRequestEmail } from "@/lib/email/send-admin-new-verified-request-email"
 
 const requestSchema = z.object({
   fullName: z.string().trim().min(1).max(200),
@@ -43,6 +44,21 @@ export async function submitVerifiedRequest(
           status: "pending",
         },
       })
+
+    // Awaited so the send actually completes before this serverless
+    // invocation can be torn down, but its failure never surfaces to the
+    // applicant — this is an internal admin ping, not something they
+    // should see or worry about.
+    const notified = await sendAdminNewVerifiedRequestEmail({
+      userEmail: email,
+      fullName: parsed.data.fullName,
+      phone: parsed.data.phone,
+      useCase: parsed.data.useCase,
+    })
+    if (!notified.success) {
+      console.error("[verified/request] submitVerifiedRequest: admin notification failed:", notified.error)
+    }
+
     return { success: true }
   } catch (error) {
     console.error("[verified/request] submitVerifiedRequest error:", error)
