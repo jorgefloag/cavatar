@@ -198,88 +198,90 @@ export function ClaimForm({
                 )}
               </Step>
 
-              <Step
-                number={4}
-                title="Esperá aprobación"
-                description="Revisamos tu pago y tu solicitud antes de activar tu buzón."
-                isLast
-              />
+              <Step number={4} title="Llená el formulario" isLast>
+                <div className="flex flex-col gap-6">
+                  <Field>
+                    <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@correo.com"
+                      required
+                      className="h-12 rounded-lg text-base"
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="vehicleBrand">Marca del vehículo</FieldLabel>
+                    <Input
+                      id="vehicleBrand"
+                      type="text"
+                      value={vehicleBrand}
+                      onChange={(e) => setVehicleBrand(e.target.value)}
+                      placeholder="Toyota, Honda, Ford..."
+                      required
+                      className="h-12 rounded-lg text-base"
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="carName">
+                      Nombre del carro
+                      <span className="ml-1 text-muted-foreground font-normal">(opcional)</span>
+                    </FieldLabel>
+                    <Input
+                      id="carName"
+                      type="text"
+                      value={carName}
+                      onChange={(e) => setCarName(e.target.value)}
+                      placeholder='Ej. "El Rayo"'
+                      className="h-12 rounded-lg text-base"
+                    />
+                  </Field>
+
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="acceptedPrivacy"
+                      checked={acceptedPrivacy}
+                      onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="acceptedPrivacy" className="text-sm font-normal text-muted-foreground">
+                      He leído y acepto el{" "}
+                      <a
+                        href="/privacidad"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-foreground underline underline-offset-4"
+                      >
+                        Aviso de Privacidad
+                      </a>{" "}
+                      de CAVATAR.
+                    </Label>
+                  </div>
+
+                  {errorMessage && (
+                    <p className="text-center text-sm text-destructive">{errorMessage}</p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={isLoading || !acceptedPrivacy}
+                    className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
+                  >
+                    {isLoading ? "Enviando..." : "Enviar solicitud"}
+                  </Button>
+
+                  <p className="text-center text-xs text-muted-foreground">
+                    Revisamos tu pago y tu solicitud antes de activar tu buzón. Te avisaremos por correo en cuanto
+                    tengamos una respuesta.
+                  </p>
+                </div>
+              </Step>
             </div>
-
-            <Field>
-              <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                required
-                className="h-12 rounded-lg text-base"
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="vehicleBrand">Marca del vehículo</FieldLabel>
-              <Input
-                id="vehicleBrand"
-                type="text"
-                value={vehicleBrand}
-                onChange={(e) => setVehicleBrand(e.target.value)}
-                placeholder="Toyota, Honda, Ford..."
-                required
-                className="h-12 rounded-lg text-base"
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="carName">
-                Nombre del carro
-                <span className="ml-1 text-muted-foreground font-normal">(opcional)</span>
-              </FieldLabel>
-              <Input
-                id="carName"
-                type="text"
-                value={carName}
-                onChange={(e) => setCarName(e.target.value)}
-                placeholder='Ej. "El Rayo"'
-                className="h-12 rounded-lg text-base"
-              />
-            </Field>
-
-            <div className="flex items-start gap-2">
-              <Checkbox
-                id="acceptedPrivacy"
-                checked={acceptedPrivacy}
-                onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
-                className="mt-0.5"
-              />
-              <Label htmlFor="acceptedPrivacy" className="text-sm font-normal text-muted-foreground">
-                He leído y acepto el{" "}
-                <a
-                  href="/privacidad"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground underline underline-offset-4"
-                >
-                  Aviso de Privacidad
-                </a>{" "}
-                de CAVATAR.
-              </Label>
-            </div>
-
-            {errorMessage && (
-              <p className="text-center text-sm text-destructive">{errorMessage}</p>
-            )}
-
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isLoading || !acceptedPrivacy}
-              className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
-            >
-              {isLoading ? "Enviando..." : "Enviar solicitud"}
-            </Button>
           </FieldGroup>
         </form>
       </div>
