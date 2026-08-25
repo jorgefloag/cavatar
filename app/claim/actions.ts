@@ -5,6 +5,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { claimRequests } from "@/lib/db/schema"
 import { sendAdminNewClaimEmail } from "@/lib/email/send-admin-new-claim-email"
+import { sendClaimReceivedEmail } from "@/lib/email/send-claim-received-email"
 
 const claimSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20),
@@ -55,10 +56,11 @@ export async function submitClaim(
         where: ne(claimRequests.status, "approved"),
       })
 
-    // Awaited so the send actually completes before this serverless
-    // invocation can be torn down, but its failure never surfaces to the
-    // public submitter — this is an internal admin ping, not something
-    // the person claiming a plate should see or worry about.
+    // Both awaited so the sends actually complete before this serverless
+    // invocation can be torn down, but neither's failure surfaces to the
+    // submitter — the DB insert already succeeded and is the source of
+    // truth; these are best-effort notifications, not the confirmation
+    // itself (the on-screen "Tu solicitud fue enviada correctamente" is).
     const notified = await sendAdminNewClaimEmail({
       plateNumber,
       email: parsed.data.email,
@@ -67,6 +69,11 @@ export async function submitClaim(
     })
     if (!notified.success) {
       console.error("[claim] submitClaim: admin notification failed:", notified.error)
+    }
+
+    const confirmed = await sendClaimReceivedEmail({ to: parsed.data.email, plateNumber })
+    if (!confirmed.success) {
+      console.error("[claim] submitClaim: submitter confirmation failed:", confirmed.error)
     }
 
     return { success: true }
