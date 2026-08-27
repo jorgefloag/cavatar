@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
 import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 // =============================================================================
 // ANTI-SPAM CONFIGURATION
@@ -322,7 +323,7 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
                 id="plate"
                 type="text"
                 value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+                onChange={(e) => setPlateNumber(normalizePlateNumber(e.target.value))}
                 placeholder="ABC-123"
                 required
                 className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"

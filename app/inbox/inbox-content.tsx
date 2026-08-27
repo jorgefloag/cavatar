@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { lookupPlate, verifyPlatePassword, type MessageDTO } from "./actions"
 import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 type Message = MessageDTO
 
@@ -43,7 +44,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
   useEffect(() => {
     const plateParam = searchParams.get("plate")
     if (plateParam && pageState === "plate_input") {
-      const plate = plateParam.trim().toUpperCase()
+      const plate = normalizePlateNumber(plateParam)
       setPlateNumber(plate)
       const runLookup = async () => {
         setIsSubmitting(true)
@@ -67,7 +68,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
     e.preventDefault()
     if (!plateNumber.trim()) return
 
-    const plate = plateNumber.trim().toUpperCase()
+    const plate = normalizePlateNumber(plateNumber)
     setIsSubmitting(true)
     setCurrentPlate(plate)
 
@@ -161,7 +162,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
                 type="text"
                 placeholder="ABC123"
                 value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+                onChange={(e) => setPlateNumber(normalizePlateNumber(e.target.value))}
                 required
                 disabled={isSubmitting}
                 className="plate-frame bg-background py-6 font-plate text-lg uppercase tracking-wider text-foreground placeholder:text-muted-foreground focus:ring-foreground"

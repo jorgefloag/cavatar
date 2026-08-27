@@ -6,6 +6,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { broadcasts, claimRequests, messages } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 export interface BrandOptionDTO {
   value: string
@@ -63,12 +64,14 @@ const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".xls"]
 
 // Sends regardless of claim status (same leniency as /send for a single
 // plate) so this is purely structural validation, not a claim_requests
-// lookup: trim/uppercase, non-empty, within the length bound everything
-// else in the app already uses. No plate-format regex — CR plates vary
-// too much across vehicle types and eras for a stricter check to be safe.
+// lookup: normalize (same shared rule as every other plate entry point —
+// strips hyphens/spaces too, not just case), non-empty, within the length
+// bound everything else in the app already uses. No plate-format regex —
+// CR plates vary too much across vehicle types and eras for a stricter
+// check to be safe.
 function normalizePlate(raw: unknown): string | null {
   if (typeof raw !== "string" && typeof raw !== "number") return null
-  const value = String(raw).trim().toUpperCase()
+  const value = normalizePlateNumber(String(raw))
   if (!value || value.length > PLATE_MAX_LENGTH) return null
   return value
 }
@@ -177,7 +180,7 @@ export async function sendBroadcast(
   let actualCount: number
   let normalizedPlates: string[] = []
   if (recipients.mode === "list") {
-    normalizedPlates = [...new Set(recipients.plates.map((p) => p.trim().toUpperCase()).filter(Boolean))]
+    normalizedPlates = [...new Set(recipients.plates.map(normalizePlateNumber).filter(Boolean))]
     actualCount = normalizedPlates.length
   } else {
     actualCount = await countRecipients(recipients.mode === "brand" ? recipients.brandFilter : null)

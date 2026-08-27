@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { approveClaim, rejectClaim, resendSetupEmail, revokeClaim, type ClaimDTO } from "./actions"
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
@@ -47,7 +48,10 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
       if (statusFilter !== "all" && claim.status !== statusFilter) return false
       if (search.trim()) {
         const q = search.trim().toLowerCase()
-        if (!claim.plateNumber.toLowerCase().includes(q) && !claim.email.toLowerCase().includes(q)) return false
+        const normalizedQuery = normalizePlateNumber(search)
+        const matchesPlate = normalizedQuery.length > 0 && normalizePlateNumber(claim.plateNumber).includes(normalizedQuery)
+        const matchesEmail = claim.email.toLowerCase().includes(q)
+        if (!matchesPlate && !matchesEmail) return false
       }
       return true
     })

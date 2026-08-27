@@ -5,6 +5,7 @@ import { and, eq, gt, isNull } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 const MAX_FAILED_ATTEMPTS = 5
 const BLOCK_DURATION_MS = 5 * 60 * 1000
@@ -26,7 +27,7 @@ export type LookupResult =
   | { state: "enter_password" }
 
 export async function lookupPlate(plateNumber: string): Promise<LookupResult> {
-  const plate = plateNumber.trim().toUpperCase()
+  const plate = normalizePlateNumber(plateNumber)
 
   const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.plateNumber, plate)).limit(1)
 
@@ -107,7 +108,7 @@ export async function verifyPlatePassword(
   plateNumber: string,
   password: string,
 ): Promise<{ success: boolean; locked?: boolean; messages?: MessageDTO[]; carName?: string | null }> {
-  const plate = plateNumber.trim().toUpperCase()
+  const plate = normalizePlateNumber(plateNumber)
 
   const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.plateNumber, plate)).limit(1)
 

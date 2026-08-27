@@ -4,6 +4,7 @@ import { count, desc, eq, ilike } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { messages } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 const PAGE_SIZE = 20
 
@@ -31,7 +32,9 @@ export async function fetchMessages({ page, plate }: { page: number; plate?: str
   if (!admin.ok) return emptyPage
 
   const safePage = Math.max(1, page)
-  const where = plate ? ilike(messages.plateNumber, `%${plate}%`) : undefined
+  // Normalize the search term the same way plate_number is stored, so
+  // searching "ABC-123" still finds a row saved as "ABC123".
+  const where = plate ? ilike(messages.plateNumber, `%${normalizePlateNumber(plate)}%`) : undefined
 
   const [rows, [{ value: totalCount }]] = await Promise.all([
     db

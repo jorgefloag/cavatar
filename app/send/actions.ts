@@ -5,9 +5,10 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { messages, verifiedRequests } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 const messageSchema = z.object({
-  plateNumber: z.string().trim().min(1).max(20),
+  plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
   name: z.string().trim().max(100).optional(),
   message: z.string().trim().min(1).max(300),
   contact: z.string().trim().max(200).optional(),
@@ -23,7 +24,7 @@ export async function submitMessage(
 
   try {
     await db.insert(messages).values({
-      plateNumber: parsed.data.plateNumber.toUpperCase(),
+      plateNumber: parsed.data.plateNumber,
       alias: parsed.data.name || null,
       message: parsed.data.message,
       contact: parsed.data.contact || null,

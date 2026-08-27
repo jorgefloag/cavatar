@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 function Step({
   number,
@@ -144,7 +145,7 @@ export function ClaimForm({
                     id="plate"
                     type="text"
                     value={plateNumber}
-                    onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+                    onChange={(e) => setPlateNumber(normalizePlateNumber(e.target.value))}
                     placeholder="ABC-123"
                     required
                     className="h-12 rounded-lg font-plate text-base uppercase tracking-wider"

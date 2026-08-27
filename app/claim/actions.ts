@@ -6,9 +6,10 @@ import { db } from "@/lib/db"
 import { claimRequests } from "@/lib/db/schema"
 import { sendAdminNewClaimEmail } from "@/lib/email/send-admin-new-claim-email"
 import { sendClaimReceivedEmail } from "@/lib/email/send-claim-received-email"
+import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
 const claimSchema = z.object({
-  plateNumber: z.string().trim().min(1).max(20),
+  plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
   email: z.string().trim().email(),
   vehicleBrand: z.string().trim().min(1).max(100),
   carName: z.string().trim().max(60).optional(),
@@ -22,7 +23,7 @@ export async function submitClaim(
     return { success: false, error: "Datos inválidos." }
   }
 
-  const plateNumber = parsed.data.plateNumber.toUpperCase()
+  const plateNumber = parsed.data.plateNumber
   const carName = parsed.data.carName || null
 
   try {
