@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { and, eq, gt, inArray, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
-import { qstash, qstashReceiver, notifyOwnerWebhookUrl } from "@/lib/qstash/client"
+import { qstash, qstashReceiver, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 import { sendNewMessageNotificationEmail } from "@/lib/email/send-new-message-notification-email"
 
 // Must match the cooldown submitMessage()'s scheduling logic assumes when
@@ -70,6 +70,7 @@ export async function POST(request: Request) {
         url: notifyOwnerWebhookUrl(),
         body: { plateNumber },
         delay: retryInSeconds,
+        headers: qstashPublishHeaders(),
       })
       await db
         .update(claimRequests)

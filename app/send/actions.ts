@@ -6,7 +6,7 @@ import { db } from "@/lib/db"
 import { claimRequests, messages, verifiedRequests } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
-import { qstash, notifyOwnerWebhookUrl } from "@/lib/qstash/client"
+import { qstash, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -65,6 +65,7 @@ async function scheduleOwnerNotificationIfNeeded(plateNumber: string): Promise<v
       url: notifyOwnerWebhookUrl(),
       body: { plateNumber },
       delay: BATCH_DELAY_SECONDS,
+      headers: qstashPublishHeaders(),
     })
 
     await db
