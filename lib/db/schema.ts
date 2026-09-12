@@ -21,6 +21,13 @@ export const claimRequests = pgTable(
     setupTokenExpiresAt: timestamp("setup_token_expires_at", { withTimezone: true }),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // New-message owner notifications (see app/api/qstash/notify-owner):
+    // notifyScheduledAt marks a pending QStash callback so submitMessage()
+    // doesn't schedule a second one within the same batching window;
+    // lastNotifiedAt is the cooldown clock so a burst of messages can't
+    // notify this plate more than once every COOLDOWN_MINUTES.
+    notifyScheduledAt: timestamp("notify_scheduled_at", { withTimezone: true }),
+    lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
   },
   (t) => [unique().on(t.plateNumber)],
 )
@@ -45,6 +52,7 @@ export const messages = pgTable("messages", {
   contact: text("contact"),
   broadcastId: uuid("broadcast_id").references(() => broadcasts.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  ownerNotifiedAt: timestamp("owner_notified_at", { withTimezone: true }),
 })
 
 export const verifiedRequests = pgTable(
