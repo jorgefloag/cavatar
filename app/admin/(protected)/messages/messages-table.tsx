@@ -15,7 +15,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { fetchMessages, deleteMessage, type MessagesPage } from "./actions"
+import { downloadCSV } from "@/lib/csv/download-csv"
+import { toCSV } from "@/lib/csv/to-csv"
+import { fetchMessages, fetchAllMessagesForExport, deleteMessage, type MessagesPage } from "./actions"
 
 export function MessagesTable({
   initialResult,
@@ -26,12 +28,18 @@ export function MessagesTable({
 }) {
   const [result, setResult] = useState(initialResult)
   const [plateFilter, setPlateFilter] = useState(initialPlateFilter)
+  // Separate from plateFilter (the live search box text) so "Descargar CSV"
+  // always matches what's actually on screen, not text typed but not yet
+  // submitted via "Buscar".
+  const [appliedPlateFilter, setAppliedPlateFilter] = useState(initialPlateFilter)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const totalPages = Math.max(1, Math.ceil(result.totalCount / result.pageSize))
 
   const loadPage = (page: number, plate: string) => {
+    setAppliedPlateFilter(plate)
     startTransition(async () => {
       const next = await fetchMessages({ page, plate: plate || undefined })
       setResult(next)
@@ -41,6 +49,28 @@ export function MessagesTable({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     loadPage(1, plateFilter)
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await fetchAllMessagesForExport({ plate: appliedPlateFilter || undefined })
+      const csv = toCSV(
+        ["Placa", "Alias", "Mensaje", "Contacto", "Fecha"],
+        rows.map((msg) => [
+          msg.plateNumber,
+          msg.isBroadcast ? "CAVATAR (Oficial)" : (msg.alias ?? ""),
+          msg.message,
+          msg.contact ?? "",
+          new Date(msg.createdAt).toLocaleString("es-MX"),
+        ]),
+      )
+      const datePart = new Date().toISOString().slice(0, 10)
+      const filterSuffix = appliedPlateFilter ? `-placa-${appliedPlateFilter}` : ""
+      downloadCSV(`mensajes${filterSuffix}-${datePart}.csv`, csv)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -67,6 +97,15 @@ export function MessagesTable({
         />
         <Button type="submit" variant="outline" disabled={isPending}>
           Buscar
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleExport}
+          disabled={isExporting || result.totalCount === 0}
+          className="sm:ml-auto"
+        >
+          {isExporting ? "Descargando..." : "Descargar CSV"}
         </Button>
       </form>
 
