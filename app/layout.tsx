@@ -1,7 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Archivo, Archivo_Black } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ClerkProvider } from '@clerk/nextjs'
+import { InstallPrompt } from '@/components/install-prompt'
 import './globals.css'
 
 const inter = Inter({
@@ -25,22 +26,24 @@ export const metadata: Metadata = {
   description: 'Convierte cada placa vehicular en un buzón digital donde cualquier persona puede enviar un mensaje.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: '/favicon.png',
     apple: '/apple-icon.png',
   },
+  appleWebApp: {
+    capable: true,
+    title: 'CAVATAR',
+    // 'default' keeps the status bar opaque instead of overlaying page
+    // content — the app has a white background and no safe-area-inset
+    // handling today, so 'black-translucent' would risk content rendering
+    // under the status bar.
+    statusBarStyle: 'default',
+  },
+}
+
+// themeColor lives on Viewport, not Metadata — metadata.themeColor is
+// deprecated in favor of this separate export.
+export const viewport: Viewport = {
+  themeColor: '#0B1220',
 }
 
 export default function RootLayout({
@@ -53,6 +56,7 @@ export default function RootLayout({
       <html lang="es" className="bg-background">
         <body className={`${inter.variable} ${archivo.variable} ${archivoBlack.variable} font-sans antialiased bg-background text-foreground`}>
           {children}
+          <InstallPrompt />
           <Analytics />
         </body>
       </html>
