@@ -93,3 +93,22 @@ export const banners = pgTable(
   },
   (t) => [unique().on(t.location)],
 )
+
+// One row per (plate, browser subscription). UNIQUE is on (plateNumber,
+// endpoint), not endpoint alone: a single browser subscription is one per
+// origin, but nothing stops the same device being linked to several plates
+// the same owner controls (or several test plates) — endpoint alone would
+// have forced a device to silently "move" between plates on re-activation.
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    plateNumber: text("plate_number").notNull(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+  },
+  (t) => [unique().on(t.plateNumber, t.endpoint)],
+)

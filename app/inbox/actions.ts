@@ -6,9 +6,7 @@ import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
-
-const MAX_FAILED_ATTEMPTS = 5
-const BLOCK_DURATION_MS = 5 * 60 * 1000
+import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
 
 export interface MessageDTO {
   id: string
@@ -110,34 +108,10 @@ export async function verifyPlatePassword(
 ): Promise<{ success: boolean; locked?: boolean; messages?: MessageDTO[]; carName?: string | null }> {
   const plate = normalizePlateNumber(plateNumber)
 
-  const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.plateNumber, plate)).limit(1)
-
-  if (!claim || !claim.passwordHash) {
-    return { success: false }
+  const result = await verifyClaimPassword(plate, password)
+  if (!result.success) {
+    return { success: false, locked: result.locked }
   }
-
-  if (claim.lockedUntil && claim.lockedUntil.getTime() > Date.now()) {
-    return { success: false, locked: true }
-  }
-
-  const passwordMatch = await bcrypt.compare(password, claim.passwordHash)
-
-  if (!passwordMatch) {
-    const newFailedAttempts = claim.failedAttempts + 1
-    const lockedUntil = newFailedAttempts >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + BLOCK_DURATION_MS) : null
-
-    await db
-      .update(claimRequests)
-      .set({ failedAttempts: lockedUntil ? 0 : newFailedAttempts, lockedUntil })
-      .where(eq(claimRequests.plateNumber, plate))
-
-    return { success: false, locked: Boolean(lockedUntil) }
-  }
-
-  await db
-    .update(claimRequests)
-    .set({ failedAttempts: 0, lockedUntil: null })
-    .where(eq(claimRequests.plateNumber, plate))
 
   const rows = await db
     .select()
@@ -162,5 +136,5 @@ export async function verifyPlatePassword(
       isBroadcast: msg.broadcastId !== null,
     }))
 
-  return { success: true, messages: formatted, carName: claim.carName }
+  return { success: true, messages: formatted, carName: result.claim.carName }
 }

@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { lookupPlate, verifyPlatePassword, type MessageDTO } from "./actions"
+import { PushNotificationToggle } from "@/components/push-notification-toggle"
 import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
@@ -400,6 +401,11 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               Revisa los mensajes enviados a tu placa{" "}
               <span className="font-plate text-foreground">{currentPlate}</span>
             </p>
+          </div>
+
+          {/* Push notifications */}
+          <div className="mb-8">
+            <PushNotificationToggle plateNumber={currentPlate} />
           </div>
 
           {/* Banner slot */}
