@@ -7,6 +7,7 @@ import { claimRequests, messages, verifiedRequests } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { qstash, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
+import { isNotificationCapped } from "@/lib/qstash/notification-window"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -15,11 +16,14 @@ const messageSchema = z.object({
   contact: z.string().trim().max(200).optional(),
 })
 
-const BATCH_DELAY_SECONDS = 5 * 60
+const BATCH_DELAY_SECONDS = 60
 // If a scheduled callback never fired (QStash outage, misconfiguration),
 // don't let a stuck notifyScheduledAt block this plate from ever getting
-// notified again — treat a schedule older than this as abandoned.
-const STALE_SCHEDULE_MINUTES = 15
+// notified again — treat a schedule older than this as abandoned. Must
+// stay comfortably above COOLDOWN_MINUTES in app/api/qstash/notify-owner
+// (a cooldown-triggered reschedule can land up to that far out) or this
+// could mistake a legitimately-pending reschedule for an abandoned one.
+const STALE_SCHEDULE_MINUTES = 10
 
 export async function submitMessage(
   input: z.infer<typeof messageSchema>,
@@ -53,6 +57,23 @@ async function scheduleOwnerNotificationIfNeeded(plateNumber: string): Promise<v
   try {
     const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.plateNumber, plateNumber)).limit(1)
     if (!claim || claim.status !== "approved") return
+
+    // Checked here, not just in the webhook: with a 1-minute batch delay,
+    // a plate getting spammed nonstop would otherwise keep scheduling a
+    // fresh QStash callback roughly every minute even while capped (each
+    // capped callback still clears notifyScheduledAt on its way out),
+    // which could burn through QStash's own account-wide daily publish
+    // quota and break notifications for every other plate too.
+    const now = new Date()
+    if (
+      isNotificationCapped({
+        notifyWindowStartedAt: claim.notifyWindowStartedAt,
+        notifyWindowCount: claim.notifyWindowCount,
+        now,
+      })
+    ) {
+      return
+    }
 
     const staleThreshold = new Date(Date.now() - STALE_SCHEDULE_MINUTES * 60 * 1000)
     if (claim.notifyScheduledAt && claim.notifyScheduledAt > staleThreshold) {

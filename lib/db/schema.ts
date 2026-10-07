@@ -28,6 +28,16 @@ export const claimRequests = pgTable(
     // notify this plate more than once every COOLDOWN_MINUTES.
     notifyScheduledAt: timestamp("notify_scheduled_at", { withTimezone: true }),
     lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
+    // Daily notification cap (see lib/qstash/notification-window.ts):
+    // notifyWindowStartedAt anchors this plate's own rolling 24h window —
+    // deliberately NOT derived from lastNotifiedAt, which only records the
+    // *most recent* send and can't tell "2 hours into this window" from
+    // "23 hours into this window" once several sends have happened.
+    // notifyWindowCount is how many notifications this plate has had since
+    // that anchor. Both reset together once 24h have elapsed since the
+    // anchor — not on a calendar-day boundary.
+    notifyWindowStartedAt: timestamp("notify_window_started_at", { withTimezone: true }),
+    notifyWindowCount: integer("notify_window_count").notNull().default(0),
   },
   (t) => [unique().on(t.plateNumber)],
 )

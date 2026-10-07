@@ -4,12 +4,13 @@ import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
 import { qstash, qstashReceiver, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 import { sendNewMessageNotificationEmail } from "@/lib/email/send-new-message-notification-email"
+import { DAILY_NOTIFICATION_CAP, isNotificationCapped, isWindowExpired } from "@/lib/qstash/notification-window"
 
 // Must match the cooldown submitMessage()'s scheduling logic assumes when
 // deciding whether a pending callback already covers a new message.
-const COOLDOWN_MINUTES = 30
+const COOLDOWN_MINUTES = 5
 
-// QStash calls this ~5 minutes after the first un-notified message for a
+// QStash calls this ~1 minute after the first un-notified message for a
 // plate arrives (scheduled from app/send/actions.ts's submitMessage()).
 // Like the Vercel Cron route, this is a deliberate app/api exception to
 // this codebase's "everything is a Server Action" convention — QStash, like
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
   if (!claim || claim.status !== "approved") {
     // Shouldn't normally happen — submitMessage() only schedules a callback
     // for approved claims — but the claim could have been revoked in the
-    // 5 minutes since. Just clear the pending marker and stop.
+    // minute since. Just clear the pending marker and stop.
     if (claim) {
       await db
         .update(claimRequests)
@@ -58,6 +59,25 @@ export async function POST(request: Request) {
   }
 
   const now = new Date()
+
+  // Second line of defense (first is the check in submitMessage() itself,
+  // which stops scheduling new callbacks for a capped plate in the first
+  // place — see lib/qstash/notification-window.ts for why both exist). A
+  // callback that was already in flight when the cap was reached can still
+  // land here, so this must independently refuse to send.
+  if (
+    isNotificationCapped({
+      notifyWindowStartedAt: claim.notifyWindowStartedAt,
+      notifyWindowCount: claim.notifyWindowCount,
+      now,
+    })
+  ) {
+    await db
+      .update(claimRequests)
+      .set({ notifyScheduledAt: null })
+      .where(eq(claimRequests.plateNumber, plateNumber))
+    return NextResponse.json({ sent: false, reason: "daily cap reached" })
+  }
 
   // Cooldown not yet elapsed: don't send, push the batch to whenever it
   // does elapse instead of dropping it — nothing is lost, just delayed.
@@ -106,10 +126,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ sent: false, reason: "nothing pending" })
   }
 
+  // Roll the window forward: start a fresh one (count 1) if the previous
+  // one expired or never existed, otherwise keep its anchor and increment.
+  const windowStartedAt = isWindowExpired(claim.notifyWindowStartedAt, now) ? now : claim.notifyWindowStartedAt!
+  const windowCount = isWindowExpired(claim.notifyWindowStartedAt, now) ? 1 : claim.notifyWindowCount + 1
+  const reachedDailyCap = windowCount >= DAILY_NOTIFICATION_CAP
+
   const result = await sendNewMessageNotificationEmail({
     to: claim.email,
     plateNumber,
     messageCount: unnotified.length,
+    reachedDailyCap,
   })
 
   if (!result.success) {
@@ -121,8 +148,13 @@ export async function POST(request: Request) {
   await db.update(messages).set({ ownerNotifiedAt: now }).where(inArray(messages.id, ids))
   await db
     .update(claimRequests)
-    .set({ lastNotifiedAt: now, notifyScheduledAt: null })
+    .set({
+      lastNotifiedAt: now,
+      notifyScheduledAt: null,
+      notifyWindowStartedAt: windowStartedAt,
+      notifyWindowCount: windowCount,
+    })
     .where(eq(claimRequests.plateNumber, plateNumber))
 
-  return NextResponse.json({ sent: true, count: unnotified.length })
+  return NextResponse.json({ sent: true, count: unnotified.length, windowCount, reachedDailyCap })
 }
