@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Aviso de Privacidad
           </h1>
-          <p className="text-sm text-muted-foreground">Última actualización: 12 de agosto de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: 7 de octubre de 2026</p>
         </div>
 
         {/* Draft notice */}
@@ -77,6 +77,17 @@ export default function PrivacidadPage() {
                 contraseña que vos definís, que guardamos con hash (bcrypt) — nunca la contraseña en sí.
               </li>
               <li>
+                <strong className="text-foreground">Para activar avisos push en tu dispositivo</strong> (opcional,
+                desde tu buzón): si tocás "Activar avisos" y confirmás tu contraseña del buzón, guardamos la
+                dirección técnica que tu navegador nos da para ese dispositivo (el "endpoint" del servicio de
+                notificaciones) junto con dos llaves técnicas de cifrado, ligadas a la placa, además de la fecha en
+                que activaste el aviso y la fecha del último aviso enviado con éxito. Este aviso no incluye el
+                contenido del mensaje — solo te notifica que hay uno nuevo, igual que el correo. Se borra si
+                desactivás el aviso vos mismo, si tu navegador nos informa que la suscripción ya no existe, si tenés
+                más de 5 dispositivos activados para la misma placa (se elimina el más antiguo), o si un
+                administrador revoca el reclamo de tu placa.
+              </li>
+              <li>
                 <strong className="text-foreground">Mensajes oficiales de CAVATAR</strong>: el administrador de
                 CAVATAR puede enviar mensajes operativos (avisos del servicio, no publicidad de terceros) a todas
                 las placas aprobadas o a un grupo filtrado por marca de vehículo, usando el dato de marca que
@@ -118,6 +129,14 @@ export default function PrivacidadPage() {
                 <strong className="text-foreground">Proveedores externos</strong> que procesan datos en nuestro
                 nombre (ver sección 5).
               </li>
+              <li>
+                <strong className="text-foreground">El servicio de notificaciones de tu propio navegador</strong>{" "}
+                (por ejemplo Google para Chrome, Mozilla para Firefox, o Apple para Safari, u otro proveedor, según
+                tu navegador): si activás avisos push, el aviso viaja a través del servicio de ese navegador para
+                llegar a tu dispositivo. El contenido del aviso viaja cifrado de extremo a extremo según el
+                protocolo estándar de Web Push, de forma que ese servicio no puede leerlo — solo ve la dirección
+                técnica de tu dispositivo y datos de entrega, nunca el texto del mensaje. Ver sección 5.
+              </li>
             </ul>
             <p className="mt-3">No vendemos ni compartimos tus datos con terceros para fines de mercadeo.</p>
           </section>
@@ -153,6 +172,11 @@ export default function PrivacidadPage() {
                   <td>Vercel</td>
                   <td>Hosting de la aplicación</td>
                   <td>Estados Unidos</td>
+                </tr>
+                <tr>
+                  <td>Servicio de push del navegador (Google, Mozilla o Apple, u otro, según el navegador)</td>
+                  <td>Entrega del aviso push a tu dispositivo (solo si activaste esta función)</td>
+                  <td>Varía según el proveedor</td>
                 </tr>
               </tbody>
             </table>
