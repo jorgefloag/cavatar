@@ -38,6 +38,16 @@ export const claimRequests = pgTable(
     // anchor — not on a calendar-day boundary.
     notifyWindowStartedAt: timestamp("notify_window_started_at", { withTimezone: true }),
     notifyWindowCount: integer("notify_window_count").notNull().default(0),
+    // Push notification rate limiting (see lib/push/push-window.ts) — a
+    // deliberately separate set of columns/constants from the email ones
+    // above, not shared logic, so this channel's limits can never drift the
+    // email channel's by accident. pushLastSentAt is the per-plate minimum-
+    // gap clock; pushWindowStartedAt/pushWindowCount are the same anchored-
+    // 24h-window pattern as notifyWindowStartedAt/notifyWindowCount, just
+    // with push's own (higher) daily cap.
+    pushLastSentAt: timestamp("push_last_sent_at", { withTimezone: true }),
+    pushWindowStartedAt: timestamp("push_window_started_at", { withTimezone: true }),
+    pushWindowCount: integer("push_window_count").notNull().default(0),
   },
   (t) => [unique().on(t.plateNumber)],
 )

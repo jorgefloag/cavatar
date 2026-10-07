@@ -2,12 +2,14 @@
 
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
+import { after } from "next/server"
 import { db } from "@/lib/db"
 import { claimRequests, messages, verifiedRequests } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { qstash, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 import { isNotificationCapped } from "@/lib/qstash/notification-window"
+import { sendPushNotificationIfNeeded } from "@/lib/push/send-push-notification"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -45,6 +47,13 @@ export async function submitMessage(
     // can be torn down, but its failure never blocks the response — the
     // message itself is already saved either way.
     await scheduleOwnerNotificationIfNeeded(parsed.data.plateNumber)
+
+    // Push is a separate, near-instant channel that complements the email
+    // above rather than replacing it. after() runs this once the response
+    // has been sent to the sender — so it adds no perceptible delay — while
+    // still keeping the function alive until it finishes, unlike a bare
+    // un-awaited promise that risks being torn down mid-flight.
+    after(() => sendPushNotificationIfNeeded(parsed.data.plateNumber))
 
     return { success: true }
   } catch (error) {

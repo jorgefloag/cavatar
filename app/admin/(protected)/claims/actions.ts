@@ -2,7 +2,7 @@
 
 import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { claimRequests } from "@/lib/db/schema"
+import { claimRequests, pushSubscriptions } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
 import { issueSetupToken } from "@/lib/claims/issue-setup-token"
 import { sendClaimRejectedEmail } from "@/lib/email/send-claim-rejected-email"
@@ -143,6 +143,12 @@ export async function revokeClaim(id: string): Promise<{ success: boolean; error
     if (!result) {
       return { success: false, error: "Este reclamo ya no está aprobado." }
     }
+
+    // Revoking cuts inbox access immediately (password/lockout already
+    // cleared above) — push subscriptions must go the same way, or a
+    // revoked owner's device would keep getting pushed for a plate they no
+    // longer control.
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.plateNumber, result.plateNumber))
 
     const sent = await sendClaimRevokedEmail({ to: result.email, plateNumber: result.plateNumber })
     return { success: true, warning: sent.success ? undefined : "El reclamo se revocó, pero el correo no se pudo enviar." }
