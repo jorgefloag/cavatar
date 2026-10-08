@@ -63,7 +63,14 @@ export async function sendPushNotificationIfNeeded(plateNumber: string): Promise
           webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             payload,
-            { TTL: 60 },
+            {
+              // "high" so Android doesn't defer delivery to the next Doze
+              // maintenance window — messages here can be urgent. TTL of
+              // 4h so a brief loss of signal doesn't silently drop the
+              // push, but a notice that old no longer means anything.
+              urgency: "high",
+              TTL: 4 * 60 * 60,
+            },
           ),
           SEND_TIMEOUT_MS,
         ).then(() => sub),
