@@ -49,7 +49,12 @@ export async function approveClaim(id: string): Promise<{ success: boolean; erro
   try {
     const [result] = await db
       .update(claimRequests)
-      .set({ status: "approved", reviewedAt: new Date() })
+      .set({
+        status: "approved",
+        reviewedAt: new Date(),
+        passwordResetTokenHash: null,
+        passwordResetTokenExpiresAt: null,
+      })
       .where(and(eq(claimRequests.id, id), eq(claimRequests.status, "pending")))
       .returning({ id: claimRequests.id, email: claimRequests.email, plateNumber: claimRequests.plateNumber })
 
@@ -136,6 +141,8 @@ export async function revokeClaim(id: string): Promise<{ success: boolean; error
         lockedUntil: null,
         setupTokenHash: null,
         setupTokenExpiresAt: null,
+        passwordResetTokenHash: null,
+        passwordResetTokenExpiresAt: null,
       })
       .where(and(eq(claimRequests.id, id), eq(claimRequests.status, "approved")))
       .returning({ email: claimRequests.email, plateNumber: claimRequests.plateNumber })

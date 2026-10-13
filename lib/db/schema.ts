@@ -48,6 +48,29 @@ export const claimRequests = pgTable(
     pushLastSentAt: timestamp("push_last_sent_at", { withTimezone: true }),
     pushWindowStartedAt: timestamp("push_window_started_at", { withTimezone: true }),
     pushWindowCount: integer("push_window_count").notNull().default(0),
+    // Self-service "forgot my password" (see lib/claims/issue-password-reset-token.ts).
+    // Deliberately a SEPARATE token pair from setupTokenHash/setupTokenExpiresAt
+    // above, not a relaxed version of it: the setup token's guard (only
+    // usable while password_hash IS NULL) is a real security property —
+    // a setup token can never overwrite an existing password. A reset
+    // token needs the opposite guard (only usable once password_hash IS
+    // NOT NULL), so the two must never share one column pair or that
+    // property could blur. Requesting a new reset token overwrites this
+    // hash, which is what makes "only the latest link works" true — no
+    // extra bookkeeping needed. Cleared (along with setupTokenHash) when a
+    // claim is approved or revoked, so a stale link never survives a status
+    // change out from under it.
+    passwordResetTokenHash: text("password_reset_token_hash"),
+    passwordResetTokenExpiresAt: timestamp("password_reset_token_expires_at", { withTimezone: true }),
+    // Same anchored-24h-window pattern as notify_window_*/push_window_*
+    // above — a third independent copy, not shared code, same reasoning.
+    // This single counter is shared between two different triggers (a
+    // genuine password reset, and a resend of the original setup link for
+    // a claim that's still awaiting_setup): both represent "we sent this
+    // plate's owner a password-setting email," which is the thing actually
+    // worth rate-limiting, regardless of which of the two emails it was.
+    passwordResetWindowStartedAt: timestamp("password_reset_window_started_at", { withTimezone: true }),
+    passwordResetWindowCount: integer("password_reset_window_count").notNull().default(0),
   },
   (t) => [unique().on(t.plateNumber)],
 )

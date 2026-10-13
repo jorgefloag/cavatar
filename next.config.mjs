@@ -17,6 +17,17 @@ const nextConfig = {
       bodySizeLimit: "3mb",
     },
   },
+  // The password-reset link carries a one-time token in its query string.
+  // Without this, clicking any outbound link from that page would leak the
+  // full URL (token included) to that site via the Referer header.
+  async headers() {
+    return [
+      {
+        source: "/inbox/reset-password",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+    ]
+  },
 }
 
 export default nextConfig

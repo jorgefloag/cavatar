@@ -268,6 +268,16 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               {isSubmitting ? "Verificando..." : "Ingresar"}
             </Button>
           </form>
+
+          {/* Plain <Link> — a real navigation, not a state change, so this
+              can't interact with dismissedPlateRef or the auto-lookup
+              effect the way the Bug 2 fix had to guard against. */}
+          <Link
+            href={`/inbox/forgot-password?plate=${currentPlate}`}
+            className="mt-6 inline-block text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            ¿Olvidaste tu clave?
+          </Link>
         </div>
       </main>
     )
