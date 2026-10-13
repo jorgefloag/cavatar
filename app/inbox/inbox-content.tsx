@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2, BadgeCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -20,6 +20,7 @@ type Message = MessageDTO
 type PageState = "plate_input" | "loading" | "no_claim" | "pending" | "awaiting_setup" | "enter_password" | "wrong_password" | "inbox"
 
 function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const plateInputRef = useRef<HTMLInputElement>(null)
   const [pageState, setPageState] = useState<PageState>("plate_input")
@@ -120,6 +121,11 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
     setMessages([])
     setIsBlocked(false)
     setPageState("plate_input")
+    // Clear ?plate= (and any other query param) so the auto-submit effect
+    // below doesn't immediately re-run lookupPlate() and snap pageState
+    // right back to the screen this reset was meant to leave — replace, not
+    // push, so this doesn't add its own back-button entry.
+    router.replace("/inbox", { scroll: false })
   }
 
   const handleArchive = (id: string) => {
