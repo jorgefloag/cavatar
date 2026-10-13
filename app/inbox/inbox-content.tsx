@@ -35,6 +35,15 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
   // this is only a UI mirror of the last server response.
   const [isBlocked, setIsBlocked] = useState(false)
 
+  // The exact ?plate= value handleReset() last dismissed. router.replace()
+  // clearing the URL is asynchronous — on a slow connection, the auto-submit
+  // effect below can re-fire on the stale searchParams before that
+  // navigation lands, re-triggering lookupPlate() and snapping pageState
+  // right back. A ref is synchronous and carries no such race: it's set in
+  // the same handler call that resets pageState, so the very next run of
+  // the effect already sees it, regardless of when the URL itself updates.
+  const dismissedPlateRef = useRef<string | null>(null)
+
   // Auto-focus plate input when navigating from features card
   useEffect(() => {
     if (searchParams.get("focus") === "plate" && plateInputRef.current) {
@@ -45,6 +54,11 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
   // Auto-submit plate lookup when plate param is provided from hero
   useEffect(() => {
     const plateParam = searchParams.get("plate")
+    if (plateParam && plateParam === dismissedPlateRef.current) {
+      // The user just explicitly left this exact plate via handleReset() —
+      // don't resurrect it just because the URL hasn't caught up yet.
+      return
+    }
     if (plateParam && pageState === "plate_input") {
       const plate = normalizePlateNumber(plateParam)
       setPlateNumber(plate)
@@ -114,6 +128,10 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
   }
 
   const handleReset = () => {
+    // Set synchronously, before any state update below, so the auto-submit
+    // effect's very next run already sees it — no dependency on when
+    // router.replace()'s URL change actually lands.
+    dismissedPlateRef.current = searchParams.get("plate")
     setPlateNumber("")
     setPassword("")
     setCurrentPlate("")
@@ -121,10 +139,9 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
     setMessages([])
     setIsBlocked(false)
     setPageState("plate_input")
-    // Clear ?plate= (and any other query param) so the auto-submit effect
-    // below doesn't immediately re-run lookupPlate() and snap pageState
-    // right back to the screen this reset was meant to leave — replace, not
-    // push, so this doesn't add its own back-button entry.
+    // Still clear ?plate= (and any other query param) so the URL itself is
+    // honest afterward — reloading, sharing the link, etc. — even though
+    // the ref above, not this, is what stops the stale re-trigger now.
     router.replace("/inbox", { scroll: false })
   }
 
