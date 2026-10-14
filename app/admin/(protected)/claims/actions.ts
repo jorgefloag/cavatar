@@ -7,6 +7,7 @@ import { requireAdminEmail } from "@/lib/auth/require-admin"
 import { issueSetupToken } from "@/lib/claims/issue-setup-token"
 import { sendClaimRejectedEmail } from "@/lib/email/send-claim-rejected-email"
 import { sendClaimRevokedEmail } from "@/lib/email/send-claim-revoked-email"
+import { invalidateInboxSessions } from "@/lib/inbox/session"
 
 const RESEND_COOLDOWN_MS = 60 * 1000
 const TOKEN_TTL_MS = 48 * 60 * 60 * 1000
@@ -156,6 +157,9 @@ export async function revokeClaim(id: string): Promise<{ success: boolean; error
     // revoked owner's device would keep getting pushed for a plate they no
     // longer control.
     await db.delete(pushSubscriptions).where(eq(pushSubscriptions.plateNumber, result.plateNumber))
+    // Same reasoning — a revoked owner's still-active buzón session (if any)
+    // must stop working too.
+    await invalidateInboxSessions(result.plateNumber)
 
     const sent = await sendClaimRevokedEmail({ to: result.email, plateNumber: result.plateNumber })
     return { success: true, warning: sent.success ? undefined : "El reclamo se revocó, pero el correo no se pudo enviar." }

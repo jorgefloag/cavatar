@@ -11,6 +11,7 @@ import { issuePasswordResetToken } from "@/lib/claims/issue-password-reset-token
 import { issueSetupToken } from "@/lib/claims/issue-setup-token"
 import { isPasswordResetCapped, isPasswordResetWindowExpired } from "@/lib/claims/password-reset-window"
 import { sendPasswordChangedEmail } from "@/lib/email/send-password-changed-email"
+import { invalidateInboxSessions } from "@/lib/inbox/session"
 
 // Always the same response regardless of whether the plate exists, is
 // pending, awaiting_setup, or approved-with-password — never give the
@@ -137,6 +138,10 @@ export async function resetPasswordWithToken(
   // for the legitimate owner (reactivate on their own phone), correctly
   // kicks out anything else.
   await db.delete(pushSubscriptions).where(eq(pushSubscriptions.plateNumber, result.plateNumber))
+  // Same reasoning as the push eviction above — any inbox_sessions cookie
+  // issued before this reset must stop working, in case it wasn't the real
+  // owner who held it.
+  await invalidateInboxSessions(result.plateNumber)
 
   const notified = await sendPasswordChangedEmail({ to: result.email, plateNumber: result.plateNumber })
 

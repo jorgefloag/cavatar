@@ -4,6 +4,7 @@ export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved", "r
 export const verifiedStatusEnum = pgEnum("verified_status", ["pending", "approved", "rejected"])
 export const bannerLocationEnum = pgEnum("banner_location", ["landing", "send", "inbox"])
 export const broadcastSourceEnum = pgEnum("broadcast_source", ["all", "brand", "list"])
+export const reportStatusEnum = pgEnum("report_status", ["pending", "reviewed", "dismissed"])
 
 export const claimRequests = pgTable(
   "claim_requests",
@@ -96,6 +97,16 @@ export const messages = pgTable("messages", {
   broadcastId: uuid("broadcast_id").references(() => broadcasts.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   ownerNotifiedAt: timestamp("owner_notified_at", { withTimezone: true }),
+  // Owner-side declutter only — never hides anything from the admin, never
+  // a moderation action. archivedAt nullable, set/unset freely.
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  // Soft delete, by the owner (deletedBy: "owner") or the admin
+  // (deletedBy: the admin's email) — same mechanism either way, so there's
+  // one deletion story to reason about, not two. Purged for real ~30 days
+  // later by a cron (Fase 4 of this plan); deletedBy is the audit trail
+  // CLAUDE.md's Roadmap already flagged as missing.
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  deletedBy: text("deleted_by"),
 })
 
 export const verifiedRequests = pgTable(
@@ -145,3 +156,37 @@ export const pushSubscriptions = pgTable(
   },
   (t) => [unique().on(t.plateNumber, t.endpoint)],
 )
+
+// One row per owner report of a message. messageId is nullable with
+// ON DELETE SET NULL specifically so the 30-day purge cron can hard-delete
+// the underlying message without breaking (or cascading into) this row —
+// messagePreview is a permanent snapshot, captured at report time, so the
+// report stays reviewable even after the message itself is gone (same
+// survives-deletion reasoning as broadcasts.recipient_plates elsewhere).
+export const messageReports = pgTable("message_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  plateNumber: text("plate_number").notNull(),
+  messageId: uuid("message_id").references(() => messages.id, { onDelete: "set null" }),
+  messagePreview: text("message_preview").notNull(),
+  reason: text("reason"),
+  status: reportStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewedBy: text("reviewed_by"),
+})
+
+// Short-lived buzón session (see lib/inbox/session.ts) — issued by
+// verifyPlatePassword() on a successful password check, so the owner isn't
+// forced to re-enter the password for every archive/delete/report action
+// in the same visit. Deliberately the same "opaque random token, hash
+// stored, checked against expiry" shape as the setup/reset tokens above,
+// not a signed/stateless cookie — no new trust mechanism, same pattern
+// proven three times already in this codebase. Expired rows are purged by
+// the same cron that purges soft-deleted messages.
+export const inboxSessions = pgTable("inbox_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  plateNumber: text("plate_number").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})

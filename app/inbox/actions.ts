@@ -7,6 +7,7 @@ import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
+import { issueInboxSession } from "@/lib/inbox/session"
 
 export interface MessageDTO {
   id: string
@@ -112,6 +113,11 @@ export async function verifyPlatePassword(
   if (!result.success) {
     return { success: false, locked: result.locked }
   }
+
+  // Issued here so the owner doesn't have to re-enter the password for
+  // every archive/delete/report action in this same visit — see
+  // lib/inbox/session.ts.
+  await issueInboxSession(plate)
 
   const rows = await db
     .select()
