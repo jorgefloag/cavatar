@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { claimRequests, verifiedRequests } from "@/lib/db/schema"
+import { claimRequests, messageReports, verifiedRequests } from "@/lib/db/schema"
 import { sendAdminDailyDigestEmail } from "@/lib/email/send-admin-daily-digest-email"
 
 // Vercel Cron can only call an HTTP endpoint, not a Server Action — this is
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const [pendingClaims, pendingVerified] = await Promise.all([
+  const [pendingClaims, pendingVerified, pendingReportsRows] = await Promise.all([
     db
       .select({ plateNumber: claimRequests.plateNumber, email: claimRequests.email, createdAt: claimRequests.createdAt })
       .from(claimRequests)
@@ -22,13 +22,21 @@ export async function GET(request: Request) {
       .select({ userEmail: verifiedRequests.userEmail, fullName: verifiedRequests.fullName, createdAt: verifiedRequests.createdAt })
       .from(verifiedRequests)
       .where(eq(verifiedRequests.status, "pending")),
+    db
+      .select({ plateNumber: messageReports.plateNumber, createdAt: messageReports.createdAt })
+      .from(messageReports)
+      .where(eq(messageReports.status, "pending")),
   ])
 
-  if (pendingClaims.length === 0 && pendingVerified.length === 0) {
+  if (pendingClaims.length === 0 && pendingVerified.length === 0 && pendingReportsRows.length === 0) {
     return NextResponse.json({ sent: false, reason: "nothing pending" })
   }
 
-  const result = await sendAdminDailyDigestEmail({ pendingClaims, pendingVerified })
+  const result = await sendAdminDailyDigestEmail({
+    pendingClaims,
+    pendingVerified,
+    pendingReports: pendingReportsRows,
+  })
   if (!result.success) {
     console.error("[cron/daily-digest] send failed:", result.error)
     return NextResponse.json({ sent: false, error: result.error }, { status: 500 })
@@ -38,5 +46,6 @@ export async function GET(request: Request) {
     sent: true,
     pendingClaims: pendingClaims.length,
     pendingVerified: pendingVerified.length,
+    pendingReports: pendingReportsRows.length,
   })
 }

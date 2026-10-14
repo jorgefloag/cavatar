@@ -2,7 +2,7 @@
 
 import { count, eq, gte } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { claimRequests, messages, verifiedRequests } from "@/lib/db/schema"
+import { claimRequests, messages, messageReports, verifiedRequests } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
 
 export interface DashboardMetrics {
@@ -14,6 +14,7 @@ export interface DashboardMetrics {
   messagesToday: number
   claimsToday: number
   verifiedToday: number
+  reportsPending: number
 }
 
 const emptyMetrics: DashboardMetrics = {
@@ -25,6 +26,7 @@ const emptyMetrics: DashboardMetrics = {
   messagesToday: 0,
   claimsToday: 0,
   verifiedToday: 0,
+  reportsPending: 0,
 }
 
 export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
@@ -43,6 +45,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     [messagesToday],
     [claimsToday],
     [verifiedToday],
+    [reportsPending],
   ] = await Promise.all([
     db.select({ value: count() }).from(claimRequests).where(eq(claimRequests.status, "approved")),
     db.select({ value: count() }).from(claimRequests).where(eq(claimRequests.status, "pending")),
@@ -52,6 +55,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     db.select({ value: count() }).from(messages).where(gte(messages.createdAt, startOfToday)),
     db.select({ value: count() }).from(claimRequests).where(gte(claimRequests.createdAt, startOfToday)),
     db.select({ value: count() }).from(verifiedRequests).where(gte(verifiedRequests.createdAt, startOfToday)),
+    db.select({ value: count() }).from(messageReports).where(eq(messageReports.status, "pending")),
   ])
 
   return {
@@ -63,5 +67,6 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     messagesToday: messagesToday.value,
     claimsToday: claimsToday.value,
     verifiedToday: verifiedToday.value,
+    reportsPending: reportsPending.value,
   }
 }

@@ -12,6 +12,7 @@ export default async function AdminDashboardPage() {
     { label: "Mensajes enviados hoy", value: metrics.messagesToday },
     { label: "Reclamos nuevos hoy", value: metrics.claimsToday },
     { label: "Solicitudes de verificación nuevas hoy", value: metrics.verifiedToday },
+    { label: "Reportes pendientes", value: metrics.reportsPending },
   ]
 
   return (

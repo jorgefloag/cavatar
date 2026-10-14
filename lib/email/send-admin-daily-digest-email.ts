@@ -12,6 +12,11 @@ interface PendingVerifiedSummary {
   createdAt: Date
 }
 
+interface PendingReportSummary {
+  plateNumber: string
+  createdAt: Date
+}
+
 function daysPending(createdAt: Date): number {
   const ms = Date.now() - createdAt.getTime()
   return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)))
@@ -25,9 +30,11 @@ function formatDays(days: number): string {
 export async function sendAdminDailyDigestEmail({
   pendingClaims,
   pendingVerified,
+  pendingReports,
 }: {
   pendingClaims: PendingClaimSummary[]
   pendingVerified: PendingVerifiedSummary[]
+  pendingReports: PendingReportSummary[]
 }): Promise<{ success: boolean; error?: string }> {
   const to = process.env.ADMIN_NOTIFICATION_EMAIL
   if (!to) {
@@ -37,6 +44,7 @@ export async function sendAdminDailyDigestEmail({
 
   const claimsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/claims`
   const verifiedUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/verified`
+  const messagesUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/messages`
   const today = new Date().toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })
 
   const claimsList = pendingClaims
@@ -53,6 +61,10 @@ export async function sendAdminDailyDigestEmail({
     )
     .join("")
 
+  const reportsList = pendingReports
+    .map((r) => `<li><strong>${r.plateNumber}</strong> (esperando ${formatDays(daysPending(r.createdAt))})</li>`)
+    .join("")
+
   try {
     const { error } = await resend.emails.send({
       from: EMAIL_FROM,
@@ -64,6 +76,8 @@ export async function sendAdminDailyDigestEmail({
         ${pendingClaims.length ? `<ul>${claimsList}</ul><p><a href="${claimsUrl}">Revisar reclamos</a></p>` : "<p>Ninguno pendiente.</p>"}
         <h3>Solicitudes de perfil verificado (${pendingVerified.length})</h3>
         ${pendingVerified.length ? `<ul>${verifiedList}</ul><p><a href="${verifiedUrl}">Revisar solicitudes</a></p>` : "<p>Ninguna pendiente.</p>"}
+        <h3>Mensajes reportados (${pendingReports.length})</h3>
+        ${pendingReports.length ? `<ul>${reportsList}</ul><p><a href="${messagesUrl}">Revisar reportes</a></p>` : "<p>Ninguno pendiente.</p>"}
       `,
     })
 
