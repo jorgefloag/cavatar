@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Aviso de Privacidad
           </h1>
-          <p className="text-sm text-muted-foreground">Última actualización: 7 de octubre de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: 14 de octubre de 2026</p>
         </div>
 
         {/* Draft notice */}
@@ -86,6 +86,20 @@ export default function PrivacidadPage() {
                 desactivás el aviso vos mismo, si tu navegador nos informa que la suscripción ya no existe, si tenés
                 más de 5 dispositivos activados para la misma placa (se elimina el más antiguo), o si un
                 administrador revoca el reclamo de tu placa.
+              </li>
+              <li>
+                <strong className="text-foreground">Para reportar un mensaje</strong> (desde tu buzón, con tu
+                contraseña ya ingresada): guardamos la placa, el motivo que indiques (opcional) y una copia del
+                contenido del mensaje reportado tal como estaba al momento del reporte — esta copia se conserva
+                aunque el mensaje original se elimine después, para que el administrador pueda revisarlo.
+              </li>
+              <li>
+                <strong className="text-foreground">Para mantenerte identificado dentro de tu buzón</strong>{" "}
+                (después de ingresar tu contraseña): usamos una cookie técnica que contiene solo un código aleatorio;
+                nuestro servidor asocia ese código con la placa que desbloqueaste. Vence a los 30 minutos de
+                inactividad y se renueva mientras seguís usando el buzón. No la usamos para rastrearte entre sitios
+                ni con fines de mercadeo, solo para que no tengas que volver a escribir tu contraseña en cada acción
+                (archivar, eliminar, reportar) dentro de la misma visita.
               </li>
               <li>
                 <strong className="text-foreground">Mensajes oficiales de CAVATAR</strong>: el administrador de
@@ -228,6 +242,25 @@ export default function PrivacidadPage() {
               Conservamos tus datos mientras tu cuenta, solicitud o reclamo esté activo, o hasta que ejerzas tu
               derecho de cancelación — en cualquier caso, por un máximo de 10 años, conforme al límite establecido en
               la Ley 8968.
+            </p>
+            <p className="mt-3">
+              Si archivás, eliminás, o un administrador elimina un mensaje de tu buzón, el mensaje deja de mostrarse
+              de inmediato, pero lo conservamos en reserva por aproximadamente 30 días antes de borrarlo
+              definitivamente de forma automática — decimos &quot;aproximadamente&quot; porque este borrado corre
+              una vez al día, dentro de una ventana horaria, no exactamente a los 30 días en punto. Durante ese
+              plazo no ofrecemos una función para restaurar el mensaje. Un administrador puede eliminarlo de forma
+              definitiva e inmediata en casos que lo ameriten, sin esperar ese plazo.
+            </p>
+            <p className="mt-3">
+              La cookie técnica de sesión de tu buzón (ver sección 2) vence sola a los 30 minutos de inactividad; el
+              mismo proceso automático diario que purga mensajes eliminados también borra las sesiones ya vencidas
+              que hayan quedado registradas en nuestra base.
+            </p>
+            <p className="mt-3">
+              Si reportás un mensaje, conservamos la copia de su contenido (ver sección 2) hasta 12 meses después de
+              que el reporte se revise o se cierre — ya sea porque un administrador lo marcó como revisado o lo
+              descartó, o porque se cerró automáticamente al purgarse el mensaje reportado. Un reporte que todavía
+              esté pendiente de revisión no se borra nunca por este motivo.
             </p>
           </section>
 

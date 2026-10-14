@@ -23,7 +23,7 @@ export default function TerminosPage() {
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
             Términos de Servicio
           </h1>
-          <p className="text-sm text-muted-foreground">Última actualización: 9 de agosto de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: 14 de octubre de 2026</p>
         </div>
 
         {/* Draft notice */}
@@ -75,8 +75,31 @@ export default function TerminosPage() {
             <h2>4. Contenido generado por usuarios</h2>
             <p>
               Los mensajes enviados a través de CAVATAR no se revisan antes de publicarse. Sos responsable del
-              contenido que escribís. Un administrador puede eliminar mensajes reportados o que incumplan estos
-              términos; la eliminación es permanente y no garantizamos poder recuperar un mensaje eliminado.
+              contenido que escribís.
+            </p>
+            <p className="mt-3">Si tenés una placa reclamada y aprobada, desde tu buzón podés:</p>
+            <ul>
+              <li>Archivar un mensaje, para dejar de verlo en la lista principal sin que se elimine.</li>
+              <li>Eliminar un mensaje de tu buzón, para que deje de mostrarse de inmediato.</li>
+              <li>
+                Reportar un mensaje que te parezca abusivo o que incumpla estas reglas, para que un administrador lo
+                revise y, si corresponde, lo elimine.
+              </li>
+            </ul>
+            <p className="mt-3">
+              Los mensajes oficiales de CAVATAR (identificados como tales dentro de tu buzón) no se pueden
+              reportar — sí podés eliminarlos de tu propio buzón como cualquier otro mensaje.
+            </p>
+            <p className="mt-3">
+              Nos reservamos el derecho de eliminar, con o sin reporte previo, cualquier contenido que incumpla
+              estas reglas.
+            </p>
+            <p className="mt-3">
+              Un mensaje eliminado (por vos o por un administrador) deja de mostrarse de inmediato. La plataforma lo
+              conserva en reserva por aproximadamente 30 días antes de borrarlo definitivamente de forma automática
+              (ver Aviso de Privacidad, sección 8); no ofrecemos una función para restaurar un mensaje eliminado
+              durante ese plazo. Como excepción, un administrador puede eliminar un mensaje de forma definitiva e
+              inmediata, sin esperar ese plazo, en casos que lo ameriten.
             </p>
           </section>
 
