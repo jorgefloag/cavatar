@@ -3,12 +3,35 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Car, Clock, MessageSquare, Archive, Trash2, BadgeCheck } from "lucide-react"
+import {
+  ArrowLeft,
+  Car,
+  Clock,
+  MessageSquare,
+  Archive,
+  Trash2,
+  BadgeCheck,
+  Flag,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { lookupPlate, verifyPlatePassword, type MessageDTO } from "./actions"
+import { archiveMessage, deleteMessage, reportMessage } from "./moderation-actions"
 import { PushNotificationToggle } from "@/components/push-notification-toggle"
 import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
@@ -34,6 +57,16 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
   // Brute force protection state — real enforcement lives server-side (app/inbox/actions.ts);
   // this is only a UI mirror of the last server response.
   const [isBlocked, setIsBlocked] = useState(false)
+
+  // Set whenever archiveMessage/deleteMessage/reportMessage fails — always
+  // the same generic text from the server, shown here when bounced back to
+  // the password screen. Never set by anything else, so it can't linger
+  // and be confused with "Clave incorrecta".
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState("")
+  const [showArchived, setShowArchived] = useState(false)
+  const [showPreClaim, setShowPreClaim] = useState(false)
+  // Message IDs the owner chose to reveal from behind "Mensaje reportado — Mostrar".
+  const [revealedReported, setRevealedReported] = useState<Set<string>>(new Set())
 
   // The exact ?plate= value handleReset() last dismissed. router.replace()
   // clearing the URL is asynchronous — on a slow connection, the auto-submit
@@ -111,6 +144,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
 
       if (result.success) {
         setIsBlocked(false)
+        setSessionExpiredMessage("")
         setMessages(result.messages || [])
         setCarName(result.carName ?? null)
         setPageState("inbox")
@@ -138,6 +172,10 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
     setCarName(null)
     setMessages([])
     setIsBlocked(false)
+    setSessionExpiredMessage("")
+    setShowArchived(false)
+    setShowPreClaim(false)
+    setRevealedReported(new Set())
     setPageState("plate_input")
     // Still clear ?plate= (and any other query param) so the URL itself is
     // honest afterward — reloading, sharing the link, etc. — even though
@@ -145,12 +183,158 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
     router.replace("/inbox", { scroll: false })
   }
 
-  const handleArchive = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id))
+  // Bounces back to the password screen on any session failure — the same
+  // generic message for every cause (expired, wrong plate, message gone),
+  // never distinguished, per lib/inbox/session.ts.
+  const handleSessionExpired = (error?: string) => {
+    setSessionExpiredMessage(error || "Tu sesión venció, volvé a ingresar tu clave.")
+    setPassword("")
+    setPageState("enter_password")
   }
 
-  const handleDelete = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id))
+  // The message only leaves the list once the server confirms success —
+  // unlike before, when these buttons just filtered local state and lied.
+  const handleArchive = async (id: string) => {
+    try {
+      const result = await archiveMessage(id)
+      if (!result.success) {
+        handleSessionExpired(result.error)
+        return
+      }
+      setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, isArchived: true } : msg)))
+    } catch (error) {
+      console.error("[inbox] Error in handleArchive:", error)
+    }
+  }
+
+  const handleDeleteConfirmed = async (id: string) => {
+    try {
+      const result = await deleteMessage(id)
+      if (!result.success) {
+        handleSessionExpired(result.error)
+        return
+      }
+      setMessages((prev) => prev.filter((msg) => msg.id !== id))
+    } catch (error) {
+      console.error("[inbox] Error in handleDeleteConfirmed:", error)
+    }
+  }
+
+  const handleReport = async (id: string) => {
+    try {
+      const result = await reportMessage(id)
+      if (!result.success) {
+        handleSessionExpired(result.error)
+        return
+      }
+      setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, isReported: true } : msg)))
+    } catch (error) {
+      console.error("[inbox] Error in handleReport:", error)
+    }
+  }
+
+  // Shared by the active/archived/pre-claim sections so the card markup
+  // isn't tripled. A pending report collapses the card behind "Mostrar"
+  // until the owner chooses to reveal it.
+  const renderMessageCard = (msg: Message, featured: boolean) => {
+    if (msg.isReported && !revealedReported.has(msg.id)) {
+      return (
+        <Card key={msg.id} className="rounded-xl border-dashed">
+          <CardContent className="flex items-center justify-between pt-6">
+            <span className="text-sm text-muted-foreground">Mensaje reportado</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRevealedReported((prev) => new Set(prev).add(msg.id))}
+              className="rounded-full text-muted-foreground hover:text-foreground"
+            >
+              Mostrar
+            </Button>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <Card
+        key={msg.id}
+        className={
+          featured
+            ? "plate-frame"
+            : msg.isBroadcast
+              ? "rounded-xl border-primary/40 bg-primary/5"
+              : "rounded-xl"
+        }
+      >
+        <CardContent className="pt-6">
+          <div className="mb-3 flex items-center justify-between">
+            {msg.isBroadcast ? (
+              <span className="inline-flex items-center gap-1.5 font-label text-xs uppercase tracking-wide text-primary">
+                <BadgeCheck className="h-4 w-4" />
+                CAVATAR · Oficial
+              </span>
+            ) : (
+              <span className="font-medium text-foreground">{msg.alias}</span>
+            )}
+            <span className="font-label text-sm text-muted-foreground">{msg.fecha}</span>
+          </div>
+          <p className="mb-3 text-foreground">{msg.mensaje}</p>
+          {msg.contacto && (
+            <p className="text-sm text-muted-foreground">
+              Contacto: {msg.contacto}
+            </p>
+          )}
+        </CardContent>
+        <CardFooter className="flex-wrap gap-3 border-t pt-4">
+          {!msg.isArchived && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleArchive(msg.id)}
+              className="flex-1 rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <Archive className="mr-2 h-4 w-4" />
+              Archivar
+            </Button>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 rounded-full text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar este mensaje?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Este mensaje dejará de verse en tu buzón de inmediato.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDeleteConfirmed(msg.id)}>Eliminar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          {!msg.isBroadcast && !msg.isReported && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleReport(msg.id)}
+              className="flex-1 rounded-full text-muted-foreground hover:text-destructive"
+            >
+              <Flag className="mr-2 h-4 w-4" />
+              Reportar
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    )
   }
 
   // Step 1: Plate input only
@@ -229,6 +413,10 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               <span className="font-plate text-foreground">{currentPlate}</span>
             </p>
           </div>
+
+          {sessionExpiredMessage && (
+            <p className="mb-6 text-sm text-destructive">{sessionExpiredMessage}</p>
+          )}
 
           <form onSubmit={handlePasswordLogin} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
@@ -453,60 +641,60 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               <p className="text-muted-foreground">Aún no tienes mensajes.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {messages.map((msg, index) => (
-                <Card
-                  key={msg.id}
-                  className={
-                    index === 0
-                      ? "plate-frame"
-                      : msg.isBroadcast
-                        ? "rounded-xl border-primary/40 bg-primary/5"
-                        : "rounded-xl"
-                  }
-                >
-                  <CardContent className="pt-6">
-                    <div className="mb-3 flex items-center justify-between">
-                      {msg.isBroadcast ? (
-                        <span className="inline-flex items-center gap-1.5 font-label text-xs uppercase tracking-wide text-primary">
-                          <BadgeCheck className="h-4 w-4" />
-                          CAVATAR · Oficial
-                        </span>
-                      ) : (
-                        <span className="font-medium text-foreground">{msg.alias}</span>
-                      )}
-                      <span className="font-label text-sm text-muted-foreground">{msg.fecha}</span>
+            (() => {
+              const activeMessages = messages.filter((m) => !m.isPreClaim && !m.isArchived)
+              const archivedMessages = messages.filter((m) => !m.isPreClaim && m.isArchived)
+              const preClaimMessages = messages.filter((m) => m.isPreClaim)
+
+              return (
+                <div className="flex flex-col gap-4">
+                  {activeMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
+                      <p className="text-muted-foreground">Aún no tienes mensajes.</p>
                     </div>
-                    <p className="mb-3 text-foreground">{msg.mensaje}</p>
-                    {msg.contacto && (
-                      <p className="text-sm text-muted-foreground">
-                        Contacto: {msg.contacto}
-                      </p>
-                    )}
-                  </CardContent>
-                  <CardFooter className="gap-3 border-t pt-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleArchive(msg.id)}
-                      className="flex-1 rounded-full text-muted-foreground hover:text-foreground"
-                    >
-                      <Archive className="mr-2 h-4 w-4" />
-                      Archivar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(msg.id)}
-                      className="flex-1 rounded-full text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+                  ) : (
+                    activeMessages.map((msg, index) => renderMessageCard(msg, index === 0))
+                  )}
+
+                  {archivedMessages.length > 0 && (
+                    <div className="mt-2 border-t pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowArchived((v) => !v)}
+                        className="flex w-full items-center justify-between font-label text-xs uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <span>Archivados ({archivedMessages.length})</span>
+                        {showArchived ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      {showArchived && (
+                        <div className="mt-4 flex flex-col gap-4">
+                          {archivedMessages.map((msg) => renderMessageCard(msg, false))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {preClaimMessages.length > 0 && (
+                    <div className="mt-2 border-t pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowPreClaim((v) => !v)}
+                        className="flex w-full items-center justify-between font-label text-xs uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <span>Mensajes de antes de tu reclamo ({preClaimMessages.length})</span>
+                        {showPreClaim ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      {showPreClaim && (
+                        <div className="mt-4 flex flex-col gap-4">
+                          {preClaimMessages.map((msg) => renderMessageCard(msg, false))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })()
           )}
         </div>
       </main>

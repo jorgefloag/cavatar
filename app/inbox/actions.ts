@@ -4,7 +4,7 @@ import crypto from "crypto"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
-import { claimRequests, messages } from "@/lib/db/schema"
+import { claimRequests, messages, messageReports } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
 import { issueInboxSession } from "@/lib/inbox/session"
@@ -17,6 +17,15 @@ export interface MessageDTO {
   fecha: string
   plate_number: string
   isBroadcast: boolean
+  isArchived: boolean
+  // Computed server-side against the claim's own reviewedAt — never trust
+  // a client-supplied date for this, it's what decides which messages land
+  // in the collapsed "antes de tu reclamo" section.
+  isPreClaim: boolean
+  // True while a report on this message is still pending admin review —
+  // collapses it behind "Mensaje reportado — Mostrar" instead of removing
+  // it; the owner can still open or delete it.
+  isReported: boolean
 }
 
 export type LookupResult =
@@ -122,8 +131,16 @@ export async function verifyPlatePassword(
   const rows = await db
     .select()
     .from(messages)
-    .where(eq(messages.plateNumber, plate))
+    .where(and(eq(messages.plateNumber, plate), isNull(messages.deletedAt)))
     .orderBy(messages.createdAt)
+
+  const pendingReports = await db
+    .select({ messageId: messageReports.messageId })
+    .from(messageReports)
+    .where(and(eq(messageReports.plateNumber, plate), eq(messageReports.status, "pending")))
+  const reportedMessageIds = new Set(pendingReports.map((r) => r.messageId))
+
+  const reviewedAt = result.claim.reviewedAt
 
   const formatted: MessageDTO[] = rows
     .slice()
@@ -140,6 +157,9 @@ export async function verifyPlatePassword(
       }),
       plate_number: msg.plateNumber,
       isBroadcast: msg.broadcastId !== null,
+      isArchived: msg.archivedAt !== null,
+      isPreClaim: reviewedAt ? msg.createdAt < reviewedAt : false,
+      isReported: reportedMessageIds.has(msg.id),
     }))
 
   return { success: true, messages: formatted, carName: result.claim.carName }
