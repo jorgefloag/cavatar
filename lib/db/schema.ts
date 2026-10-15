@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, integer, boolean, timestamp, unique } from "drizzle-orm/pg-core"
+import { pgTable, pgEnum, uuid, text, integer, boolean, timestamp, unique, index } from "drizzle-orm/pg-core"
 
 export const claimStatusEnum = pgEnum("claim_status", ["pending", "approved", "rejected"])
 export const verifiedStatusEnum = pgEnum("verified_status", ["pending", "approved", "rejected"])
@@ -88,26 +88,93 @@ export const broadcasts = pgTable("broadcasts", {
   undoneAt: timestamp("undone_at", { withTimezone: true }),
 })
 
-export const messages = pgTable("messages", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  plateNumber: text("plate_number").notNull(),
-  alias: text("alias"),
-  message: text("message").notNull(),
-  contact: text("contact"),
-  broadcastId: uuid("broadcast_id").references(() => broadcasts.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  ownerNotifiedAt: timestamp("owner_notified_at", { withTimezone: true }),
-  // Owner-side declutter only — never hides anything from the admin, never
-  // a moderation action. archivedAt nullable, set/unset freely.
-  archivedAt: timestamp("archived_at", { withTimezone: true }),
-  // Soft delete, by the owner (deletedBy: "owner") or the admin
-  // (deletedBy: the admin's email) — same mechanism either way, so there's
-  // one deletion story to reason about, not two. Purged for real ~30 days
-  // later by a cron (Fase 4 of this plan); deletedBy is the audit trail
-  // CLAUDE.md's Roadmap already flagged as missing.
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-  deletedBy: text("deleted_by"),
-})
+// One row per Clerk identity that has ever sent a message — registration is
+// mandatory from the first message (Paso 2 of the abuse plan). "Verified"
+// (decision 1 of that plan) is a flag layered on top of this same identity
+// via verifiedRequests.clerkUserId below, not a separate account. isBlocked
+// is a GLOBAL, admin-only block — distinct from plateSenderAliases.blocked,
+// which only affects one plate. A blocked sender's future sends look
+// identical to a successful send from their side (see plateSenderAliases
+// below for the same reasoning) — nothing is written, but nothing tips them
+// off either.
+export const senders = pgTable(
+  "senders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clerkUserId: text("clerk_user_id").notNull(),
+    email: text("email").notNull(),
+    isBlocked: boolean("is_blocked").notNull().default(false),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
+    blockedBy: text("blocked_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.clerkUserId)],
+)
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    plateNumber: text("plate_number").notNull(),
+    alias: text("alias"),
+    message: text("message").notNull(),
+    contact: text("contact"),
+    broadcastId: uuid("broadcast_id").references(() => broadcasts.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    ownerNotifiedAt: timestamp("owner_notified_at", { withTimezone: true }),
+    // Owner-side declutter only — never hides anything from the admin, never
+    // a moderation action. archivedAt nullable, set/unset freely.
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    // Soft delete, by the owner (deletedBy: "owner") or the admin
+    // (deletedBy: the admin's email) — same mechanism either way, so there's
+    // one deletion story to reason about, not two. Purged for real ~30 days
+    // later by a cron (Fase 4 of this plan); deletedBy is the audit trail
+    // CLAUDE.md's Roadmap already flagged as missing.
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: text("deleted_by"),
+    // Paso 2 — nullable forever: null for every message sent before
+    // registration existed, and always null for broadcasts (an official
+    // CAVATAR message has no "sender"). Enforced as "must be set for a
+    // real, non-broadcast send going forward" only in submitMessage() — a
+    // DB-level NOT NULL/CHECK can't express that distinction without
+    // breaking the two legitimate null cases above.
+    senderId: uuid("sender_id").references(() => senders.id),
+  },
+  (t) => [index("messages_sender_id_created_at_idx").on(t.senderId, t.createdAt)],
+)
+
+// One row per (plate, sender) pair — assigns that sender's pseudonymous,
+// per-plate alias ("Remitente 1", "Remitente 2"...) the first time they
+// write to this plate, and holds the owner's own mute/block decision for
+// that sender on this one plate. aliasCode is sequential per plate,
+// assigned with a bounded retry-on-unique-conflict loop in the app layer —
+// neon-http has no interactive transactions to fall back on for a safe
+// "read the current max, then write the next number" step, so the unique
+// constraint below is what actually prevents two concurrent first-time
+// senders to the same plate from colliding on the same number; a
+// conflict just means retrying with the next one. muted = the owner stops
+// being notified of this sender's future messages to this plate, but the
+// messages still show up in the buzón. blocked = this sender can no longer
+// send to this one plate at all (see senders.isBlocked for the global
+// version) — same "the sender sees an identical success response either
+// way" behavior as the global block, so a blocked sender is never tipped
+// off that they've been blocked.
+export const plateSenderAliases = pgTable(
+  "plate_sender_aliases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    plateNumber: text("plate_number").notNull(),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => senders.id),
+    aliasCode: text("alias_code").notNull(),
+    muted: boolean("muted").notNull().default(false),
+    blocked: boolean("blocked").notNull().default(false),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.plateNumber, t.senderId), unique().on(t.plateNumber, t.aliasCode)],
+)
 
 export const verifiedRequests = pgTable(
   "verified_requests",
@@ -120,8 +187,20 @@ export const verifiedRequests = pgTable(
     status: verifiedStatusEnum("status").notNull().default("pending"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Paso 2, decision 1 — links this application to the same Clerk
+    // identity as its senders row ("verified" is a flag on an existing
+    // sender, not a separate account). Nullable because existing rows
+    // predate this and are linked by e-mail instead until the old
+    // password-based /verified/register flow is folded into this one
+    // (Etapa 7) — multiple NULLs are fine under a unique constraint,
+    // Postgres never treats two NULLs as equal.
+    clerkUserId: text("clerk_user_id"),
+    // Admin-visible context collected on the application form, shown with
+    // the "Verificado" badge in the buzón per decision 2 — not derived from
+    // or shown via senders/plateSenderAliases, which stay alias-only.
+    businessName: text("business_name"),
   },
-  (t) => [unique().on(t.userEmail)],
+  (t) => [unique().on(t.userEmail), unique().on(t.clerkUserId)],
 )
 
 export const banners = pgTable(
@@ -173,6 +252,13 @@ export const messageReports = pgTable("message_reports", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   reviewedBy: text("reviewed_by"),
+  // Paso 2 — same ON DELETE SET NULL reasoning as messageId above: if the
+  // reported sender later deletes their account, this report must survive
+  // it. reportedSenderEmailSnapshot is the same "permanent copy" pattern as
+  // messagePreview, so the admin can still see *who* was reported even
+  // after the sender row itself is gone — a bare FK alone would lose that.
+  reportedSenderId: uuid("reported_sender_id").references(() => senders.id, { onDelete: "set null" }),
+  reportedSenderEmailSnapshot: text("reported_sender_email_snapshot"),
 })
 
 // Short-lived buzón session (see lib/inbox/session.ts) — issued by
