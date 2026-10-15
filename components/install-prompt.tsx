@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Share, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,7 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
   const [dismissed, setDismissed] = useState(true) // default hidden until the effect below clears it
+  const barRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isStandalone() || wasDismissedRecently()) return
@@ -82,12 +83,40 @@ export function InstallPrompt() {
 
   // Operator-only area — not the audience for an install nudge, and the
   // dense admin tables don't need a fixed bar competing for space.
-  if (pathname?.startsWith("/admin")) return null
-  if (dismissed) return null
-  if (!showIOSInstructions && !deferredPrompt) return null
+  const isAdminRoute = pathname?.startsWith("/admin") ?? false
+  const shouldShow = !isAdminRoute && !dismissed && (showIOSInstructions || !!deferredPrompt)
+
+  // This bar is `fixed`, so no page knows to leave room for it — on a short
+  // viewport (iPhone 12 and smaller) it can sit directly on top of the
+  // bottom-most control on whatever page happens to be open (buzón
+  // archive/delete/report buttons, /send's submit button, etc). Reserving
+  // the space here, once, covers every page without touching any of them.
+  // Measured via ResizeObserver rather than a fixed guess, since the
+  // Spanish copy wraps to one or two lines depending on viewport width.
+  useEffect(() => {
+    if (!shouldShow || !barRef.current) {
+      document.body.style.paddingBottom = ""
+      return
+    }
+
+    const el = barRef.current
+    const applyHeight = () => {
+      document.body.style.paddingBottom = `${el.offsetHeight}px`
+    }
+    applyHeight()
+
+    const observer = new ResizeObserver(applyHeight)
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      document.body.style.paddingBottom = ""
+    }
+  }, [shouldShow])
+
+  if (!shouldShow) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4">
+    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)_+_1rem)]">
       <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl border border-border bg-background p-4 shadow-lg">
         <div className="flex-1">
           <p className="font-label text-xs uppercase tracking-widest text-muted-foreground">Instalá CAVATAR</p>
