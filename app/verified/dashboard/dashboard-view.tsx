@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useClerk } from "@clerk/nextjs"
 import { Clock, CheckCircle2, XCircle, AlertCircle, LogOut, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatDateCR } from "@/lib/dates/format-date"
 import type { VerifiedRequestDTO } from "./actions"
 
 type RequestStatus = "none" | "pending" | "approved" | "rejected"
@@ -118,7 +119,7 @@ export function DashboardView({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha</span>
                 <span className="text-foreground">
-                  {new Date(request.createdAt).toLocaleDateString("es-MX")}
+                  {formatDateCR(request.createdAt)}
                 </span>
               </div>
             </div>

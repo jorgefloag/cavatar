@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { formatDateTimeCR } from "@/lib/dates/format-date"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,13 +39,11 @@ function capitalize(value: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("es-CR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  return formatDateTimeCR(
+    iso,
+    { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" },
+    "es-CR",
+  )
 }
 
 function historyLabel(entry: BroadcastHistoryDTO) {

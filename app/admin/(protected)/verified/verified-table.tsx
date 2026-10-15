@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { formatDateCR } from "@/lib/dates/format-date"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,7 +129,7 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
                 <TableCell>
                   <Badge variant={statusVariants[req.status]}>{statusLabels[req.status]}</Badge>
                 </TableCell>
-                <TableCell>{new Date(req.createdAt).toLocaleDateString("es-MX")}</TableCell>
+                <TableCell>{formatDateCR(req.createdAt)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex justify-end gap-2">

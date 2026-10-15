@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { formatDateTimeCR } from "@/lib/dates/format-date"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,7 +89,7 @@ export function MessagesTable({
           msg.isBroadcast ? "CAVATAR (Oficial)" : (msg.alias ?? ""),
           msg.message,
           msg.contact ?? "",
-          new Date(msg.createdAt).toLocaleString("es-MX"),
+          formatDateTimeCR(msg.createdAt),
           msg.deletedAt ? `Sí (${msg.deletedBy ?? "?"})` : "No",
         ]),
       )
@@ -209,7 +210,7 @@ export function MessagesTable({
                       )}
                     </TableCell>
                     <TableCell>{report.reason ?? "—"}</TableCell>
-                    <TableCell>{new Date(report.createdAt).toLocaleString("es-MX")}</TableCell>
+                    <TableCell>{formatDateTimeCR(report.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -327,7 +328,7 @@ export function MessagesTable({
                       )}
                     </TableCell>
                     <TableCell>{msg.contact ?? "—"}</TableCell>
-                    <TableCell>{new Date(msg.createdAt).toLocaleString("es-MX")}</TableCell>
+                    <TableCell>{formatDateTimeCR(msg.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {!msg.deletedAt && (

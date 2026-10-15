@@ -1,4 +1,5 @@
 import { resend, EMAIL_FROM } from "./resend-client"
+import { formatDateCR } from "@/lib/dates/format-date"
 
 interface PendingClaimSummary {
   plateNumber: string
@@ -45,7 +46,7 @@ export async function sendAdminDailyDigestEmail({
   const claimsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/claims`
   const verifiedUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/verified`
   const messagesUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/messages`
-  const today = new Date().toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })
+  const today = formatDateCR(new Date(), { day: "numeric", month: "long", year: "numeric" }, "es-CR")
 
   const claimsList = pendingClaims
     .map(

@@ -8,6 +8,7 @@ import { claimRequests, messages, messageReports } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
 import { issueInboxSession } from "@/lib/inbox/session"
+import { formatDateCR } from "@/lib/dates/format-date"
 
 export interface MessageDTO {
   id: string
@@ -150,11 +151,7 @@ export async function verifyPlatePassword(
       alias: msg.alias || "Anónimo",
       mensaje: msg.message,
       contacto: msg.contact || "",
-      fecha: new Date(msg.createdAt).toLocaleDateString("es-MX", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
+      fecha: formatDateCR(msg.createdAt, { day: "numeric", month: "short", year: "numeric" }),
       plate_number: msg.plateNumber,
       isBroadcast: msg.broadcastId !== null,
       isArchived: msg.archivedAt !== null,

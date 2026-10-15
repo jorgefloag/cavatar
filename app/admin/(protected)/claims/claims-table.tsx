@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { formatDateCR } from "@/lib/dates/format-date"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -137,7 +138,7 @@ export function ClaimsTable({ initialClaims }: { initialClaims: ClaimDTO[] }) {
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{new Date(claim.createdAt).toLocaleDateString("es-MX")}</TableCell>
+                <TableCell>{formatDateCR(claim.createdAt)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex justify-end gap-2">
