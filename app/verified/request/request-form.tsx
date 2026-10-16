@@ -115,7 +115,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+52 55 1234 5678"
+                placeholder="+506 8888 8888"
                 required
                 className="h-12 rounded-lg text-base"
               />

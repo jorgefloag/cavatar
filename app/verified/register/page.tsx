@@ -22,7 +22,6 @@ function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [code, setCode] = useState("")
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
@@ -32,14 +31,8 @@ function RegisterForm() {
     setIsLoading(true)
     setErrorMessage("")
 
-    if (password.length < 8) {
-      setErrorMessage("La contraseña debe tener al menos 8 caracteres.")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const { error } = await signUp.password({ emailAddress: email, password })
+      const { error } = await signUp.create({ emailAddress: email })
       if (error) {
         const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
         if (!expected) console.error("[verified/register] Registration error:", error)
@@ -133,19 +126,6 @@ function RegisterForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.com"
-                  required
-                  className="h-12 rounded-lg text-base"
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
                   required
                   className="h-12 rounded-lg text-base"
                 />
