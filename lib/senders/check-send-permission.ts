@@ -1,6 +1,6 @@
 import { and, count, eq, gt } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { messages, verifiedRequests } from "@/lib/db/schema"
+import { messages, plateSenderAliases, verifiedRequests } from "@/lib/db/schema"
 import type { SenderDTO } from "./get-or-create-sender"
 
 const STANDARD_HOURLY_CAP = 3
@@ -29,8 +29,23 @@ export type SendPermissionResult =
 // instant could both read a count just under the cap and both insert,
 // letting the real total overshoot by 1-2 messages. Documented in
 // CLAUDE.md's Roadmap rather than solved here.
-export async function checkSendPermission(sender: SenderDTO): Promise<SendPermissionResult> {
+export async function checkSendPermission(sender: SenderDTO, plateNumber: string): Promise<SendPermissionResult> {
   if (sender.isBlocked) return { allowed: false, reason: "blocked" }
+
+  // Etapa 5 — per-plate block (plate_sender_aliases.blocked), on top of the
+  // global one above. A plain SELECT, not get-or-create-plate-alias()'s
+  // insert-if-missing logic: a sender who's never written to this plate has
+  // no row here yet (so nothing to block), and this check must never be
+  // the thing that creates one — alias assignment only ever happens on the
+  // success path, in submitMessage(), after this whole function returns
+  // allowed. The caller can't tell this apart from the global block above —
+  // deliberately, since the response to the sender is identical either way.
+  const [plateAlias] = await db
+    .select({ blocked: plateSenderAliases.blocked })
+    .from(plateSenderAliases)
+    .where(and(eq(plateSenderAliases.plateNumber, plateNumber), eq(plateSenderAliases.senderId, sender.id)))
+    .limit(1)
+  if (plateAlias?.blocked) return { allowed: false, reason: "blocked" }
 
   const [verifiedRow] = await db
     .select()

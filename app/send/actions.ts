@@ -13,6 +13,7 @@ import { sendPushNotificationIfNeeded } from "@/lib/push/send-push-notification"
 import { getOrCreateSender } from "@/lib/senders/get-or-create-sender"
 import { checkSendPermission, SEND_RATE_LIMIT_ERROR } from "@/lib/senders/check-send-permission"
 import { checkContactRestriction } from "@/lib/senders/validate-message-content"
+import { getOrCreatePlateAlias } from "@/lib/senders/get-or-create-plate-alias"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -48,7 +49,7 @@ export async function submitMessage(
     return { success: false, error: "Necesitás iniciar sesión para enviar un mensaje." }
   }
 
-  const permission = await checkSendPermission(sender)
+  const permission = await checkSendPermission(sender, parsed.data.plateNumber)
   if (!permission.allowed) {
     if (permission.reason === "rate_limited") {
       return { success: false, error: SEND_RATE_LIMIT_ERROR }
@@ -82,17 +83,29 @@ export async function submitMessage(
       senderId: sender.id,
     })
 
+    // Etapa 5 — assigns this sender's sequential "Remitente N" for this
+    // plate on first contact (no-op lookup on every later message). Only
+    // ever reached on this success path, never for a rejected attempt.
+    const plateAlias = await getOrCreatePlateAlias(parsed.data.plateNumber, sender.id)
+
     // Awaited so it actually completes before this serverless invocation
     // can be torn down, but its failure never blocks the response — the
-    // message itself is already saved either way.
+    // message itself is already saved either way. Muting is handled inside
+    // the webhook this schedules, not here — see
+    // app/api/qstash/notify-owner/route.ts, since the email is batched
+    // across every sender writing to this plate, not just this one message.
     await scheduleOwnerNotificationIfNeeded(parsed.data.plateNumber)
 
-    // Push is a separate, near-instant channel that complements the email
-    // above rather than replacing it. after() runs this once the response
-    // has been sent to the sender — so it adds no perceptible delay — while
+    // Push, unlike email, fires once per message with no batching, so a
+    // muted sender is simply never pushed for at all — skipped here rather
+    // than inside sendPushNotificationIfNeeded(), which has no per-message
+    // context to check against. after() runs this once the response has
+    // been sent to the sender — so it adds no perceptible delay — while
     // still keeping the function alive until it finishes, unlike a bare
     // un-awaited promise that risks being torn down mid-flight.
-    after(() => sendPushNotificationIfNeeded(parsed.data.plateNumber))
+    if (!plateAlias?.muted) {
+      after(() => sendPushNotificationIfNeeded(parsed.data.plateNumber))
+    }
 
     return { success: true, remainingThisHour: permission.remainingThisHour }
   } catch (error) {

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
-import { and, eq, gt, inArray, isNull } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { claimRequests, messages } from "@/lib/db/schema"
 import { qstash, qstashReceiver, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 import { sendNewMessageNotificationEmail } from "@/lib/email/send-new-message-notification-email"
 import { DAILY_NOTIFICATION_CAP, isNotificationCapped, isWindowExpired } from "@/lib/qstash/notification-window"
+import { computeUnnotifiedSplit } from "@/lib/qstash/compute-unnotified-messages"
 
 // Must match the cooldown submitMessage()'s scheduling logic assumes when
 // deciding whether a pending callback already covers a new message.
@@ -60,6 +61,27 @@ export async function POST(request: Request) {
 
   const now = new Date()
 
+  // Only messages after approval count — otherwise approving an old claim
+  // with a backlog of messages would trigger a "N new messages" notification
+  // for messages the owner hasn't even been able to check yet. Never counts
+  // broadcast messages — those are a deliberate one-to-many send already,
+  // piling an individual email per recipient on top would multiply exactly
+  // when quota matters most.
+  const { eligibleIds, mutedSkipIds } = await computeUnnotifiedSplit(plateNumber, claim.reviewedAt)
+
+  // Muted senders' messages are never mentioned in the email, but they ARE
+  // retired from future consideration right here, unconditionally, before
+  // any of the three early-return branches below (daily cap, cooldown,
+  // nothing eligible) — not only in the "sent" path. Without this, un-muting
+  // later would make an old message that was skipped under a daily cap or
+  // cooldown suddenly look "unnotified" again (since nothing had stamped
+  // it yet) and surface in some future, unrelated notification run as if it
+  // were new — exactly the retroactive trigger this is meant to prevent,
+  // regardless of which branch happened to run when it was first seen.
+  if (mutedSkipIds.length > 0) {
+    await db.update(messages).set({ ownerNotifiedAt: now }).where(inArray(messages.id, mutedSkipIds))
+  }
+
   // Second line of defense (first is the check in submitMessage() itself,
   // which stops scheduling new callbacks for a capped plate in the first
   // place — see lib/qstash/notification-window.ts for why both exist). A
@@ -100,25 +122,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Only messages after approval count — otherwise approving an old claim
-  // with a backlog of messages would trigger a "N new messages" notification
-  // for messages the owner hasn't even been able to check yet. Never counts
-  // broadcast messages — those are a deliberate one-to-many send already,
-  // piling an individual email per recipient on top would multiply exactly
-  // when quota matters most.
-  const unnotified = await db
-    .select({ id: messages.id })
-    .from(messages)
-    .where(
-      and(
-        eq(messages.plateNumber, plateNumber),
-        isNull(messages.ownerNotifiedAt),
-        isNull(messages.broadcastId),
-        claim.reviewedAt ? gt(messages.createdAt, claim.reviewedAt) : undefined,
-      ),
-    )
-
-  if (unnotified.length === 0) {
+  if (eligibleIds.length === 0) {
     await db
       .update(claimRequests)
       .set({ notifyScheduledAt: null })
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
   const result = await sendNewMessageNotificationEmail({
     to: claim.email,
     plateNumber,
-    messageCount: unnotified.length,
+    messageCount: eligibleIds.length,
     reachedDailyCap,
   })
 
@@ -144,8 +148,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ sent: false, error: result.error }, { status: 500 })
   }
 
-  const ids = unnotified.map((m) => m.id)
-  await db.update(messages).set({ ownerNotifiedAt: now }).where(inArray(messages.id, ids))
+  await db.update(messages).set({ ownerNotifiedAt: now }).where(inArray(messages.id, eligibleIds))
   await db
     .update(claimRequests)
     .set({
@@ -156,5 +159,5 @@ export async function POST(request: Request) {
     })
     .where(eq(claimRequests.plateNumber, plateNumber))
 
-  return NextResponse.json({ sent: true, count: unnotified.length, windowCount, reachedDailyCap })
+  return NextResponse.json({ sent: true, count: eligibleIds.length, mutedSkipped: mutedSkipIds.length, windowCount, reachedDailyCap })
 }
