@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { submitMessage, checkVerifiedStatus } from "./actions"
+import { submitMessage, checkVerifiedStatus, ensureSenderRegistered } from "./actions"
 import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,25 +14,21 @@ import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 
-// =============================================================================
-// ANTI-SPAM CONFIGURATION
-// =============================================================================
-// Simple rate limiting: max 3 messages per hour using localStorage only
-// Verified users (status = "approved" in verified_requests) bypass this limit
-// =============================================================================
-
-const MAX_MESSAGES_PER_HOUR = 3
-const STORAGE_KEY = "cavatar_send_timestamps"
 const FORM_DATA_KEY = "cavatar_send_form_data"
 
-// Save form data to sessionStorage before redirecting to login
-function saveFormData(data: { plateNumber: string; name: string; message: string; contact: string }): void {
+type SavedFormData = { plateNumber: string; name: string; message: string; contact: string; acceptedPrivacy: boolean }
+
+// Save form data to sessionStorage before redirecting to /send/login —
+// acceptedPrivacy is included so a returning, now-registered sender's
+// auto-submit (see the effect below) doesn't get blocked by a consent
+// checkbox that reset to unchecked on remount.
+function saveFormData(data: SavedFormData): void {
   if (typeof window === "undefined") return
   sessionStorage.setItem(FORM_DATA_KEY, JSON.stringify(data))
 }
 
-// Restore form data from sessionStorage after login redirect
-function getFormData(): { plateNumber: string; name: string; message: string; contact: string } | null {
+// Restore form data from sessionStorage after the registration redirect
+function getFormData(): SavedFormData | null {
   if (typeof window === "undefined") return null
   const stored = sessionStorage.getItem(FORM_DATA_KEY)
   if (!stored) return null
@@ -40,40 +36,10 @@ function getFormData(): { plateNumber: string; name: string; message: string; co
   return JSON.parse(stored)
 }
 
-// Get timestamps from last 60 minutes
-function getRecentTimestamps(): number[] {
-  if (typeof window === "undefined") return []
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (!stored) return []
-
-  const timestamps: number[] = JSON.parse(stored)
-  const oneHourAgo = Date.now() - 60 * 60 * 1000
-
-  // Filter to only timestamps within the last hour
-  return timestamps.filter((ts) => ts > oneHourAgo)
-}
-
-// Save a new timestamp
-function saveTimestamp(): void {
-  const recent = getRecentTimestamps()
-  recent.push(Date.now())
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recent))
-}
-
-// Check if user can send (has remaining messages)
-function canSendMessage(): boolean {
-  return getRecentTimestamps().length < MAX_MESSAGES_PER_HOUR
-}
-
-// Get remaining messages count
-function getRemainingMessages(): number {
-  return Math.max(0, MAX_MESSAGES_PER_HOUR - getRecentTimestamps().length)
-}
-
 export function SendForm({ banner }: { banner: BannerDTO | null }) {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isCheckingVerification, setIsCheckingVerification] = useState(true)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
   const [plateNumber, setPlateNumber] = useState("")
   const [name, setName] = useState("")
@@ -81,77 +47,73 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
   const [contact, setContact] = useState("")
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
 
-  // Anti-spam state
-  const [isBlocked, setIsBlocked] = useState(false)
-  const [remainingMessages, setRemainingMessages] = useState(MAX_MESSAGES_PER_HOUR)
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(null)
 
   // Verified user state
   const [isVerifiedUser, setIsVerifiedUser] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
 
-  // Restore form data on mount (after returning from login)
+  // Paso 2 — registration is mandatory from the first message. Resolved
+  // server-side (getOrCreateSender() inside ensureSenderRegistered()),
+  // never trusted from the client.
+  const [isRegistered, setIsRegistered] = useState(false)
+
+  // Set synchronously on mount if a draft was restored, so the auto-submit
+  // effect below knows this page load is a "returning from /send/login"
+  // case rather than a fresh visit — a ref, not state, so it carries no
+  // render-scheduling dependency the way a state flag would (same
+  // reasoning as inbox-content.tsx's dismissedPlateRef for the Bug 2 fix).
+  const returnedFromLoginRef = useRef(false)
+  const hasAutoSubmittedRef = useRef(false)
+
+  // Restore form data on mount (after returning from /send/login)
   useEffect(() => {
     const savedData = getFormData()
     if (savedData) {
+      returnedFromLoginRef.current = true
       setPlateNumber(savedData.plateNumber || "")
       setName(savedData.name || "")
       setMessage(savedData.message || "")
       setContact(savedData.contact || "")
+      setAcceptedPrivacy(savedData.acceptedPrivacy ?? false)
     }
   }, [])
 
-  // Function to save form and redirect to login
-  const handleLoginRedirect = () => {
-    saveFormData({ plateNumber, name, message, contact })
-    window.location.href = "/verified/login?returnTo=/send"
-  }
-
-  // Check spam status on mount and periodically (only for non-verified users)
-  const updateSpamStatus = useCallback(() => {
-    // Verified users are never blocked
-    if (isVerifiedUser) {
-      setIsBlocked(false)
-      setRemainingMessages(Infinity)
-      return
-    }
-
-    const canSend = canSendMessage()
-    const remaining = getRemainingMessages()
-    setIsBlocked(!canSend)
-    setRemainingMessages(remaining)
-  }, [isVerifiedUser])
-
-  // Check if user is verified on mount (identity resolved server-side via Clerk, never trusted from the client)
+  // Identity resolved server-side via Clerk, never trusted from the client.
   useEffect(() => {
-    checkVerifiedStatus().then(({ verified, email }) => {
-      setUserEmail(email)
-      setIsVerifiedUser(verified)
-      setIsCheckingVerification(false)
+    Promise.all([checkVerifiedStatus(), ensureSenderRegistered()]).then(([verifiedResult, senderResult]) => {
+      setIsVerifiedUser(verifiedResult.verified)
+      setIsRegistered(senderResult.registered)
+      setIsCheckingStatus(false)
     })
   }, [])
 
+  // Auto-submit once: only when this mount restored a saved draft AND the
+  // registration check has now resolved to true — i.e. exactly the
+  // "just came back from /send/login, already registered" case. Waiting on
+  // `message` too (not just the status flags) so this never fires before
+  // the restored draft has actually landed in state.
   useEffect(() => {
-    if (isCheckingVerification) return
+    if (!returnedFromLoginRef.current) return
+    if (hasAutoSubmittedRef.current) return
+    if (isCheckingStatus || !isRegistered) return
+    if (!message || !plateNumber) return
 
-    updateSpamStatus()
-    // Check every 10 seconds to update remaining count
-    const interval = setInterval(updateSpamStatus, 10000)
-    return () => clearInterval(interval)
-  }, [updateSpamStatus, isCheckingVerification])
+    hasAutoSubmittedRef.current = true
+    void performSubmit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCheckingStatus, isRegistered, message, plateNumber])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const redirectToSendLogin = () => {
+    saveFormData({ plateNumber, name, message, contact, acceptedPrivacy })
+    window.location.href = "/send/login?returnTo=/send"
+  }
 
-    if (!acceptedPrivacy) return
+  const handleUpgradeToVerified = () => {
+    saveFormData({ plateNumber, name, message, contact, acceptedPrivacy })
+    window.location.href = "/verified/login?returnTo=/send"
+  }
 
-    // Double-check spam status before submitting (verified users bypass this)
-    if (!isVerifiedUser && !canSendMessage()) {
-      console.log("[v0] Non-verified user blocked by rate limit")
-      setIsBlocked(true)
-      setRemainingMessages(0)
-      return
-    }
-
+  const performSubmit = async () => {
     setIsLoading(true)
     setErrorMessage("")
 
@@ -166,24 +128,37 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
 
     if (!result.success) {
       setErrorMessage(result.error || "Error al enviar mensaje. Intenta nuevamente.")
-    } else {
-      // Only record timestamp for rate limiting if user is NOT verified
-      if (!isVerifiedUser) {
-        saveTimestamp()
-        updateSpamStatus()
-      }
-
-      setPlateNumber("")
-      setName("")
-      setMessage("")
-      setContact("")
-      setAcceptedPrivacy(false)
-      setIsSubmitted(true)
+      return
     }
+
+    if (typeof result.remainingThisHour === "number") {
+      setRemainingMessages(result.remainingThisHour)
+    }
+    setPlateNumber("")
+    setName("")
+    setMessage("")
+    setContact("")
+    setAcceptedPrivacy(false)
+    setIsSubmitted(true)
   }
 
-  // Determine if button should be disabled (verified users are never blocked)
-  const isButtonDisabled = isLoading || (!isVerifiedUser && isBlocked) || isCheckingVerification || !acceptedPrivacy
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!acceptedPrivacy) return
+
+    // Registration is mandatory from the first message — the draft is
+    // preserved and resumed automatically once they return, see the
+    // auto-submit effect above.
+    if (!isRegistered) {
+      redirectToSendLogin()
+      return
+    }
+
+    await performSubmit()
+  }
+
+  const isButtonDisabled = isLoading || isCheckingStatus || !acceptedPrivacy
 
   const characterCount = message.length
   const maxCharacters = 300
@@ -203,11 +178,11 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
           </p>
           {/* User-specific feedback */}
           <p className="mb-8 text-sm text-muted-foreground">
-            {isVerifiedUser ? (
-              "Puedes seguir enviando mensajes sin limite"
-            ) : (
-              `Te quedan ${remainingMessages} mensaje${remainingMessages !== 1 ? "s" : ""} en esta hora`
-            )}
+            {remainingMessages !== null
+              ? `Te quedan ${remainingMessages} mensaje${remainingMessages !== 1 ? "s" : ""} en esta hora`
+              : isVerifiedUser
+                ? "Como perfil verificado, podés enviar hasta 20 mensajes por hora"
+                : "Podés enviar hasta 3 mensajes por hora"}
           </p>
           <div className="flex flex-col items-center gap-3">
             <Button
@@ -257,7 +232,7 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
 
         {/* User status card - the only indicator of user status */}
         <div className="mb-8 rounded-xl border border-border bg-muted/30 p-5">
-          {isCheckingVerification ? (
+          {isCheckingStatus ? (
             <div className="flex items-center justify-center py-2">
               <p className="text-sm text-muted-foreground">Verificando estado...</p>
             </div>
@@ -268,44 +243,27 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
                 Perfil verificado
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Envia mensajes sin limite
+                Hasta 20 mensajes por hora
               </p>
-            </div>
-          ) : isBlocked ? (
-            <div className="flex flex-col items-center text-center">
-              <p className="text-sm font-medium text-foreground">
-                Has alcanzado el limite del modo estandar
-              </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Accede a un perfil verificado para continuar sin limite
-              </p>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                onClick={handleLoginRedirect}
-                className="mt-4 rounded-full"
-              >
-                Obtener perfil verificado
-              </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center text-center">
               <p className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <span className="inline-block h-4 w-4 rounded-full border-2 border-muted-foreground" />
-                Modo estandar
+                Modo estándar
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Puedes enviar hasta 3 mensajes por hora
+                Hasta 3 mensajes por hora
+                {!isRegistered && " — te vamos a pedir verificar tu correo al enviar"}
               </p>
               <p className="mt-3 text-xs text-muted-foreground">
-                Quieres enviar sin limite?
+                Querés enviar hasta 20 mensajes por hora?
               </p>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleLoginRedirect}
+                onClick={handleUpgradeToVerified}
                 className="mt-2 rounded-full text-xs"
               >
                 Acceder / crear perfil verificado
@@ -409,14 +367,8 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
                 disabled={isButtonDisabled}
                 className="w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
               >
-                {isCheckingVerification ? "Cargando..." : isLoading ? "Enviando..." : "Enviar mensaje"}
+                {isCheckingStatus ? "Cargando..." : isLoading ? "Enviando..." : "Enviar mensaje"}
               </Button>
-              {/* Subtle error message when limit reached */}
-              {!isCheckingVerification && !isVerifiedUser && isBlocked && (
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  Limite alcanzado. Intenta mas tarde o accede a un perfil verificado.
-                </p>
-              )}
             </div>
           </FieldGroup>
         </form>

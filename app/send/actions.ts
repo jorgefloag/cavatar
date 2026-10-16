@@ -10,6 +10,8 @@ import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { qstash, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
 import { isNotificationCapped } from "@/lib/qstash/notification-window"
 import { sendPushNotificationIfNeeded } from "@/lib/push/send-push-notification"
+import { getOrCreateSender } from "@/lib/senders/get-or-create-sender"
+import { checkSendPermission, SEND_RATE_LIMIT_ERROR } from "@/lib/senders/check-send-permission"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -29,10 +31,30 @@ const STALE_SCHEDULE_MINUTES = 10
 
 export async function submitMessage(
   input: z.infer<typeof messageSchema>,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; remainingThisHour?: number }> {
   const parsed = messageSchema.safeParse(input)
   if (!parsed.success) {
     return { success: false, error: "Datos inválidos." }
+  }
+
+  // Never trusts a client-supplied identity — resolved server-side from the
+  // Clerk session, same as getCurrentUserEmail(). Paso 2 of the abuse plan
+  // makes registration mandatory, so null here means the gate upstream in
+  // send-form.tsx should have already redirected to /send/login; this is
+  // just defense-in-depth, not the real enforcement point.
+  const sender = await getOrCreateSender()
+  if (!sender) {
+    return { success: false, error: "Necesitás iniciar sesión para enviar un mensaje." }
+  }
+
+  const permission = await checkSendPermission(sender)
+  if (!permission.allowed) {
+    if (permission.reason === "rate_limited") {
+      return { success: false, error: SEND_RATE_LIMIT_ERROR }
+    }
+    // Blocked — identical success response to a real send, just with
+    // nothing written and no side effects run. The sender is never told.
+    return { success: true, remainingThisHour: 0 }
   }
 
   try {
@@ -41,6 +63,7 @@ export async function submitMessage(
       alias: parsed.data.name || null,
       message: parsed.data.message,
       contact: parsed.data.contact || null,
+      senderId: sender.id,
     })
 
     // Awaited so it actually completes before this serverless invocation
@@ -55,11 +78,20 @@ export async function submitMessage(
     // un-awaited promise that risks being torn down mid-flight.
     after(() => sendPushNotificationIfNeeded(parsed.data.plateNumber))
 
-    return { success: true }
+    return { success: true, remainingThisHour: permission.remainingThisHour }
   } catch (error) {
     console.error("[send] submitMessage error:", error)
     return { success: false, error: "Error al enviar mensaje. Intenta nuevamente." }
   }
+}
+
+// Backs the pre-submit gate in send-form.tsx: whether the current visitor
+// already has a senders row (registration is mandatory from the first
+// message, Paso 2 of the abuse plan) — if not, the form redirects to
+// /send/login instead of attempting to submit.
+export async function ensureSenderRegistered(): Promise<{ registered: boolean }> {
+  const sender = await getOrCreateSender()
+  return { registered: sender !== null }
 }
 
 async function scheduleOwnerNotificationIfNeeded(plateNumber: string): Promise<void> {

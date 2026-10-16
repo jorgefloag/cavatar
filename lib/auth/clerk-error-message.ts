@@ -48,3 +48,16 @@ export function getClerkErrorMessage(
   if (mapped) return { message: mapped, expected: true }
   return { message: fallback, expected: false }
 }
+
+// ClerkAPIResponseError's OWN `.code` is always the constant
+// "api_response_error" (set unconditionally in its constructor) — the
+// real, field-specific code (e.g. "form_identifier_not_found") only lives
+// on `.errors[0].code`. A bare `error.code === "form_identifier_not_found"`
+// check (as opposed to this) can never match, confirmed directly against
+// @clerk/shared's installed source, not assumed from the "code is now a
+// direct property" comment above, which only holds for the string-coded
+// ClerkError methods like signIn.password() — not for this validation
+// error shape.
+export function isIdentifierNotFoundError(error: unknown): boolean {
+  return isClerkAPIResponseError(error) && error.errors[0]?.code === "form_identifier_not_found"
+}
