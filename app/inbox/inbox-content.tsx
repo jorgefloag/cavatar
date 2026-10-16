@@ -33,6 +33,7 @@ import {
 import { lookupPlate, verifyPlatePassword, type MessageDTO } from "./actions"
 import { archiveMessage, deleteMessage, reportMessage } from "./moderation-actions"
 import { PushNotificationToggle } from "@/components/push-notification-toggle"
+import { PlateSendersSection } from "./plate-senders-section"
 import { BannerSlot } from "@/components/banner-slot"
 import type { BannerDTO } from "@/lib/banners/get-banner"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
@@ -628,6 +629,9 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
           <div className="mb-8">
             <PushNotificationToggle plateNumber={currentPlate} />
           </div>
+
+          {/* Remitentes — Etapa 5 */}
+          <PlateSendersSection plateNumber={currentPlate} />
 
           {/* Banner slot */}
           <div className="mb-8">

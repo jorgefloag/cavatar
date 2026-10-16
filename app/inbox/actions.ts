@@ -4,11 +4,22 @@ import crypto from "crypto"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
-import { claimRequests, messages, messageReports } from "@/lib/db/schema"
+import { claimRequests, messages, messageReports, plateSenderAliases } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
 import { issueInboxSession } from "@/lib/inbox/session"
 import { formatDateCR } from "@/lib/dates/format-date"
+
+// Etapa 5 — never the sender's own free-text "Nombre o alias" at face
+// value: anyone can type "Remitente 1" or "El dueño del carro" to try to
+// impersonate. The system-assigned "Remitente N" always comes first; the
+// free text, if any, is appended clearly labeled as a self-reported claim,
+// never presented as if it were the identity itself.
+function buildSenderLabel(aliasCode: string | null, rawAlias: string | null): string {
+  if (!aliasCode) return "Remitente anterior"
+  const trimmed = rawAlias?.trim()
+  return trimmed ? `${aliasCode}, dice llamarse "${trimmed}"` : aliasCode
+}
 
 export interface MessageDTO {
   id: string
@@ -130,8 +141,12 @@ export async function verifyPlatePassword(
   await issueInboxSession(plate)
 
   const rows = await db
-    .select()
+    .select({ message: messages, aliasCode: plateSenderAliases.aliasCode })
     .from(messages)
+    .leftJoin(
+      plateSenderAliases,
+      and(eq(plateSenderAliases.plateNumber, messages.plateNumber), eq(plateSenderAliases.senderId, messages.senderId)),
+    )
     .where(and(eq(messages.plateNumber, plate), isNull(messages.deletedAt)))
     .orderBy(messages.createdAt)
 
@@ -146,9 +161,9 @@ export async function verifyPlatePassword(
   const formatted: MessageDTO[] = rows
     .slice()
     .reverse()
-    .map((msg) => ({
+    .map(({ message: msg, aliasCode }) => ({
       id: msg.id,
-      alias: msg.alias || "Anónimo",
+      alias: buildSenderLabel(aliasCode, msg.alias),
       mensaje: msg.message,
       contacto: msg.contact || "",
       fecha: formatDateCR(msg.createdAt, { day: "numeric", month: "short", year: "numeric" }),
