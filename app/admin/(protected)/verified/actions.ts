@@ -1,40 +1,28 @@
 "use server"
 
-import { and, desc, eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { verifiedRequests } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
 import { sendVerifiedApprovedEmail } from "@/lib/email/send-verified-approved-email"
 import { sendVerifiedRejectedEmail } from "@/lib/email/send-verified-rejected-email"
 import { sendVerifiedRevokedEmail } from "@/lib/email/send-verified-revoked-email"
-
-export interface VerifiedRequestAdminDTO {
-  id: string
-  userEmail: string
-  fullName: string
-  phone: string
-  useCase: string
-  status: "pending" | "approved" | "rejected"
-  createdAt: string
-  reviewedAt: string | null
-}
+import { fetchAllVerifiedRequestsList, type VerifiedRequestAdminDTO } from "@/lib/admin/fetch-verified-requests"
+import { setBusinessName as setBusinessNameLib } from "@/lib/senders/set-business-name"
 
 export async function fetchAllVerifiedRequests(): Promise<VerifiedRequestAdminDTO[]> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return []
+  return fetchAllVerifiedRequestsList()
+}
 
-  const rows = await db.select().from(verifiedRequests).orderBy(desc(verifiedRequests.createdAt))
-
-  return rows.map((row) => ({
-    id: row.id,
-    userEmail: row.userEmail,
-    fullName: row.fullName,
-    phone: row.phone,
-    useCase: row.useCase,
-    status: row.status,
-    createdAt: row.createdAt.toISOString(),
-    reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : null,
-  }))
+// Etapa 7 — the only way businessName changes once a profile is approved;
+// submitVerifiedRequest() refuses to touch an approved row at all, by
+// design (see that file).
+export async function setBusinessName(requestId: string, businessName: string): Promise<{ success: boolean; error?: string }> {
+  const admin = await requireAdminEmail()
+  if (!admin.ok) return { success: false, error: "No autorizado" }
+  return setBusinessNameLib(requestId, businessName)
 }
 
 export async function approveVerifiedRequest(id: string): Promise<{ success: boolean; error?: string; warning?: string }> {

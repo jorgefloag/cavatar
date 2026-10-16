@@ -18,12 +18,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  approveVerifiedRequest,
-  rejectVerifiedRequest,
-  revokeVerifiedProfile,
-  type VerifiedRequestAdminDTO,
-} from "./actions"
+import { approveVerifiedRequest, rejectVerifiedRequest, revokeVerifiedProfile } from "./actions"
+import type { VerifiedRequestAdminDTO } from "@/lib/admin/fetch-verified-requests"
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
 

@@ -1,10 +1,11 @@
 "use server"
 
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { z } from "zod"
+import { auth } from "@clerk/nextjs/server"
 import { after } from "next/server"
 import { db } from "@/lib/db"
-import { claimRequests, messages, verifiedRequests } from "@/lib/db/schema"
+import { claimRequests, messages } from "@/lib/db/schema"
 import { getCurrentUserEmail } from "@/lib/auth/current-email"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { qstash, notifyOwnerWebhookUrl, qstashPublishHeaders } from "@/lib/qstash/client"
@@ -14,6 +15,7 @@ import { getOrCreateSender } from "@/lib/senders/get-or-create-sender"
 import { checkSendPermission, SEND_RATE_LIMIT_ERROR } from "@/lib/senders/check-send-permission"
 import { checkContactRestriction } from "@/lib/senders/validate-message-content"
 import { getOrCreatePlateAlias } from "@/lib/senders/get-or-create-plate-alias"
+import { resolveVerifiedStatusByClerkUserId } from "@/lib/senders/resolve-verified-status"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -169,16 +171,18 @@ async function scheduleOwnerNotificationIfNeeded(plateNumber: string): Promise<v
 }
 
 export async function checkVerifiedStatus(): Promise<{ verified: boolean; email: string | null }> {
-  const email = await getCurrentUserEmail()
-  if (!email) {
+  const { userId: clerkUserId } = await auth()
+  if (!clerkUserId) {
     return { verified: false, email: null }
   }
 
-  const [row] = await db
-    .select()
-    .from(verifiedRequests)
-    .where(and(eq(verifiedRequests.userEmail, email), eq(verifiedRequests.status, "approved")))
-    .limit(1)
+  // Etapa 7 — resolved by clerkUserId (see check-send-permission.ts's own
+  // switch for why), email is only returned alongside for display, not
+  // used to decide `verified` anymore.
+  const [email, status] = await Promise.all([
+    getCurrentUserEmail(),
+    resolveVerifiedStatusByClerkUserId(clerkUserId),
+  ])
 
-  return { verified: Boolean(row), email }
+  return { verified: status.verified, email }
 }

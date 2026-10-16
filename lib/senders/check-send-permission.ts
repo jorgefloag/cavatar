@@ -1,7 +1,8 @@
 import { and, count, eq, gt } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { messages, plateSenderAliases, verifiedRequests } from "@/lib/db/schema"
+import { messages, plateSenderAliases } from "@/lib/db/schema"
 import type { SenderDTO } from "./get-or-create-sender"
+import { resolveVerifiedStatusByClerkUserId } from "./resolve-verified-status"
 
 const STANDARD_HOURLY_CAP = 3
 const VERIFIED_HOURLY_CAP = 20
@@ -47,12 +48,12 @@ export async function checkSendPermission(sender: SenderDTO, plateNumber: string
     .limit(1)
   if (plateAlias?.blocked) return { allowed: false, reason: "blocked" }
 
-  const [verifiedRow] = await db
-    .select()
-    .from(verifiedRequests)
-    .where(and(eq(verifiedRequests.userEmail, sender.email), eq(verifiedRequests.status, "approved")))
-    .limit(1)
-  const cap = verifiedRow ? VERIFIED_HOURLY_CAP : STANDARD_HOURLY_CAP
+  // Etapa 7 — resolved by clerkUserId, not email: a sender whose
+  // senders.email differs from their verified_requests.userEmail (e.g. the
+  // Clerk primary email changed after they applied) is still correctly
+  // recognized, which the previous email-based match could silently miss.
+  const verifiedStatus = await resolveVerifiedStatusByClerkUserId(sender.clerkUserId)
+  const cap = verifiedStatus.verified ? VERIFIED_HOURLY_CAP : STANDARD_HOURLY_CAP
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
   const [{ value }] = await db
@@ -64,7 +65,7 @@ export async function checkSendPermission(sender: SenderDTO, plateNumber: string
 
   // `verified` is exposed here (not just used internally for the cap)
   // specifically so the caller can skip Etapa 4's link/phone/email
-  // restriction for verified senders without a second verifiedRequests
-  // lookup — this query above already answers that question.
-  return { allowed: true, remainingThisHour: cap - value - 1, verified: Boolean(verifiedRow) }
+  // restriction for verified senders without a second lookup — this call
+  // above already answers that question.
+  return { allowed: true, remainingThisHour: cap - value - 1, verified: verifiedStatus.verified }
 }

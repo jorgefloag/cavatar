@@ -26,7 +26,11 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
     setIsLoading(true)
     setErrorMessage("")
 
-    const result = await submitVerifiedRequest({ fullName, phone, useCase })
+    // Etapa 7, Parte 1 — businessName no tiene campo propio todavía (llega
+    // en la Parte 2, con su propio input y texto de ayuda); se reusa
+    // fullName como valor temporal solo para que el formulario real siga
+    // compilando y funcionando mientras tanto.
+    const result = await submitVerifiedRequest({ fullName, phone, useCase, businessName: fullName })
 
     setIsLoading(false)
 

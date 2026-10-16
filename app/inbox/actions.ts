@@ -4,26 +4,43 @@ import crypto from "crypto"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
-import { claimRequests, messages, messageReports, plateSenderAliases } from "@/lib/db/schema"
+import { claimRequests, messages, messageReports, plateSenderAliases, senders, verifiedRequests } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
 import { issueInboxSession } from "@/lib/inbox/session"
 import { formatDateCR } from "@/lib/dates/format-date"
 
-// Etapa 5 — never the sender's own free-text "Nombre o alias" at face
-// value: anyone can type "Remitente 1" or "El dueño del carro" to try to
-// impersonate. The system-assigned "Remitente N" always comes first; the
-// free text, if any, is appended clearly labeled as a self-reported claim,
-// never presented as if it were the identity itself.
-function buildSenderLabel(aliasCode: string | null, rawAlias: string | null): string {
-  if (!aliasCode) return "Remitente anterior"
-  const trimmed = rawAlias?.trim()
-  return trimmed ? `${aliasCode}, dice llamarse "${trimmed}"` : aliasCode
+// Etapa 5/7 — never the sender's own free-text "Nombre o alias" at face
+// value: anyone can type "Remitente 1", "El dueño del carro", or a fake
+// business name to try to impersonate. A verified sender (resolved
+// server-side, live, by clerkUserId — never cached or client-supplied)
+// always shows their real businessName + the "Verificado" badge instead,
+// and the free-text alias is dropped entirely for them — their identity
+// is server-verified truth, not a self-reported claim worth appending.
+// Everyone else gets the Etapa 5 behavior unchanged: system-assigned
+// "Remitente N" first, free text appended only as an explicitly labeled
+// claim, never presented as the identity itself.
+function resolveSenderDisplay(input: {
+  aliasCode: string | null
+  rawAlias: string | null
+  isVerified: boolean
+  businessName: string | null
+}): { name: string; isVerified: boolean } {
+  if (input.isVerified) {
+    // Falls back to "Perfil verificado" (never the sender's email — the
+    // buzón owner never sees emails, period) if businessName is blank,
+    // e.g. an approved profile from before this field existed.
+    return { name: input.businessName?.trim() || "Perfil verificado", isVerified: true }
+  }
+  if (!input.aliasCode) return { name: "Remitente anterior", isVerified: false }
+  const trimmed = input.rawAlias?.trim()
+  return { name: trimmed ? `${input.aliasCode}, dice llamarse "${trimmed}"` : input.aliasCode, isVerified: false }
 }
 
 export interface MessageDTO {
   id: string
   alias: string
+  isVerifiedSender: boolean
   mensaje: string
   contacto: string
   fecha: string
@@ -140,12 +157,28 @@ export async function verifyPlatePassword(
   // lib/inbox/session.ts.
   await issueInboxSession(plate)
 
+  // Etapa 7 — joined live against senders/verifiedRequests by clerkUserId
+  // (never by email, and never cached): an old message from a sender who
+  // got verified AFTER sending it still shows the badge today, and one
+  // from a sender who was later de-verified loses it immediately, since
+  // this reflects current status on every render, not a snapshot of what
+  // was true when the message arrived.
   const rows = await db
-    .select({ message: messages, aliasCode: plateSenderAliases.aliasCode })
+    .select({
+      message: messages,
+      aliasCode: plateSenderAliases.aliasCode,
+      isVerified: verifiedRequests.id,
+      businessName: verifiedRequests.businessName,
+    })
     .from(messages)
     .leftJoin(
       plateSenderAliases,
       and(eq(plateSenderAliases.plateNumber, messages.plateNumber), eq(plateSenderAliases.senderId, messages.senderId)),
+    )
+    .leftJoin(senders, eq(senders.id, messages.senderId))
+    .leftJoin(
+      verifiedRequests,
+      and(eq(verifiedRequests.clerkUserId, senders.clerkUserId), eq(verifiedRequests.status, "approved")),
     )
     .where(and(eq(messages.plateNumber, plate), isNull(messages.deletedAt)))
     .orderBy(messages.createdAt)
@@ -161,18 +194,27 @@ export async function verifyPlatePassword(
   const formatted: MessageDTO[] = rows
     .slice()
     .reverse()
-    .map(({ message: msg, aliasCode }) => ({
-      id: msg.id,
-      alias: buildSenderLabel(aliasCode, msg.alias),
-      mensaje: msg.message,
-      contacto: msg.contact || "",
-      fecha: formatDateCR(msg.createdAt, { day: "numeric", month: "short", year: "numeric" }),
-      plate_number: msg.plateNumber,
-      isBroadcast: msg.broadcastId !== null,
-      isArchived: msg.archivedAt !== null,
-      isPreClaim: reviewedAt ? msg.createdAt < reviewedAt : false,
-      isReported: reportedMessageIds.has(msg.id),
-    }))
+    .map(({ message: msg, aliasCode, isVerified, businessName }) => {
+      const display = resolveSenderDisplay({
+        aliasCode,
+        rawAlias: msg.alias,
+        isVerified: isVerified !== null,
+        businessName,
+      })
+      return {
+        id: msg.id,
+        alias: display.name,
+        isVerifiedSender: display.isVerified,
+        mensaje: msg.message,
+        contacto: msg.contact || "",
+        fecha: formatDateCR(msg.createdAt, { day: "numeric", month: "short", year: "numeric" }),
+        plate_number: msg.plateNumber,
+        isBroadcast: msg.broadcastId !== null,
+        isArchived: msg.archivedAt !== null,
+        isPreClaim: reviewedAt ? msg.createdAt < reviewedAt : false,
+        isReported: reportedMessageIds.has(msg.id),
+      }
+    })
 
   return { success: true, messages: formatted, carName: result.claim.carName }
 }
