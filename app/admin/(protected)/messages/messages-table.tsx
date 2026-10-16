@@ -27,9 +27,9 @@ import {
   deleteMessage,
   permanentlyDeleteMessage,
   dismissReport,
-  type MessagesPage,
-  type ReportedMessageDTO,
 } from "./actions"
+import type { MessagesPage } from "@/lib/admin/fetch-messages-with-sender"
+import type { ReportedMessageDTO } from "@/lib/admin/fetch-reported-messages"
 
 type Tab = "all" | "reported"
 

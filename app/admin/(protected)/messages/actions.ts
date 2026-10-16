@@ -1,113 +1,49 @@
 "use server"
 
-import { and, count, desc, eq, ilike, isNull } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { messages, messageReports } from "@/lib/db/schema"
 import { requireAdminEmail } from "@/lib/auth/require-admin"
-import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
+import {
+  fetchMessagesPage,
+  fetchAllMessagesForExportList,
+  emptyMessagesPage,
+  type MessageAdminDTO,
+  type MessagesPage,
+} from "@/lib/admin/fetch-messages-with-sender"
+import {
+  fetchReportedMessagesList,
+  fetchPendingReportsCountValue,
+  type ReportedMessageDTO,
+} from "@/lib/admin/fetch-reported-messages"
+import { blockSenderGlobally } from "@/lib/senders/block-sender-globally"
 
-const PAGE_SIZE = 20
+// Etapa 6 review: the actual query/mutation logic for all of these lives in
+// lib/ (no requireAdminEmail() in there), so it can be exercised with real
+// code via a test harness without needing a live Clerk admin session. Every
+// export here is just: gate, then call.
+//
+// No `export type { ... }` here — a "use server" file's export list is
+// scanned by Next's server-actions bundler, which expects every export to
+// be a callable action reference; re-exporting a type-only binding (even
+// via `export type`) breaks that codegen. Callers import these types
+// directly from lib/admin/* instead.
 
-export interface MessageAdminDTO {
-  id: string
-  plateNumber: string
-  alias: string | null
-  message: string
-  contact: string | null
-  createdAt: string
-  isBroadcast: boolean
-  archivedAt: string | null
-  deletedAt: string | null
-  deletedBy: string | null
-}
-
-export interface MessagesPage {
-  messages: MessageAdminDTO[]
-  totalCount: number
-  page: number
-  pageSize: number
-}
-
-const emptyPage: MessagesPage = { messages: [], totalCount: 0, page: 1, pageSize: PAGE_SIZE }
-
-function toMessageAdminDTO(row: typeof messages.$inferSelect): MessageAdminDTO {
-  return {
-    id: row.id,
-    plateNumber: row.plateNumber,
-    alias: row.alias,
-    message: row.message,
-    contact: row.contact,
-    createdAt: row.createdAt.toISOString(),
-    isBroadcast: row.broadcastId !== null,
-    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
-    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
-    deletedBy: row.deletedBy,
-  }
-}
-
-// Same filter fetchMessages() uses, factored out so the CSV export can match
-// it exactly without duplicating the normalization logic.
-function plateFilterClause(plate: string | undefined) {
-  return plate ? ilike(messages.plateNumber, `%${normalizePlateNumber(plate)}%`) : undefined
-}
-
-function buildWhere(plate: string | undefined, includeDeleted: boolean) {
-  const clauses = [plateFilterClause(plate), includeDeleted ? undefined : isNull(messages.deletedAt)].filter(
-    (c) => c !== undefined,
-  )
-  return clauses.length > 0 ? and(...clauses) : undefined
-}
-
-export async function fetchMessages({
-  page,
-  plate,
-  includeDeleted = false,
-}: {
-  page: number
-  plate?: string
-  includeDeleted?: boolean
-}): Promise<MessagesPage> {
+export async function fetchMessages(args: { page: number; plate?: string; includeDeleted?: boolean }): Promise<MessagesPage> {
   const admin = await requireAdminEmail()
-  if (!admin.ok) return emptyPage
-
-  const safePage = Math.max(1, page)
-  const where = buildWhere(plate, includeDeleted)
-
-  const [rows, [{ value: totalCount }]] = await Promise.all([
-    db
-      .select()
-      .from(messages)
-      .where(where)
-      .orderBy(desc(messages.createdAt))
-      .limit(PAGE_SIZE)
-      .offset((safePage - 1) * PAGE_SIZE),
-    db.select({ value: count() }).from(messages).where(where),
-  ])
-
-  return {
-    messages: rows.map(toMessageAdminDTO),
-    totalCount,
-    page: safePage,
-    pageSize: PAGE_SIZE,
-  }
+  if (!admin.ok) return emptyMessagesPage
+  return fetchMessagesPage(args)
 }
 
 // Unpaginated — used by the "Descargar CSV" button, which exports every row
 // matching the currently applied filter, not just the visible page.
-export async function fetchAllMessagesForExport({
-  plate,
-  includeDeleted = false,
-}: {
+export async function fetchAllMessagesForExport(args: {
   plate?: string
   includeDeleted?: boolean
 }): Promise<MessageAdminDTO[]> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return []
-
-  const where = buildWhere(plate, includeDeleted)
-  const rows = await db.select().from(messages).where(where).orderBy(desc(messages.createdAt))
-
-  return rows.map(toMessageAdminDTO)
+  return fetchAllMessagesForExportList(args)
 }
 
 // Soft delete — same mechanism as the owner's own "Eliminar" (see
@@ -181,41 +117,16 @@ export async function permanentlyDeleteMessage(id: string): Promise<{ success: b
   }
 }
 
-export interface ReportedMessageDTO {
-  id: string
-  plateNumber: string
-  messageId: string | null
-  messagePreview: string
-  reason: string | null
-  createdAt: string
-}
-
 export async function fetchReportedMessages(): Promise<ReportedMessageDTO[]> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return []
-
-  const rows = await db
-    .select()
-    .from(messageReports)
-    .where(eq(messageReports.status, "pending"))
-    .orderBy(desc(messageReports.createdAt))
-
-  return rows.map((r) => ({
-    id: r.id,
-    plateNumber: r.plateNumber,
-    messageId: r.messageId,
-    messagePreview: r.messagePreview,
-    reason: r.reason,
-    createdAt: r.createdAt.toISOString(),
-  }))
+  return fetchReportedMessagesList()
 }
 
 export async function fetchPendingReportsCount(): Promise<number> {
   const admin = await requireAdminEmail()
   if (!admin.ok) return 0
-
-  const [{ value }] = await db.select({ value: count() }).from(messageReports).where(eq(messageReports.status, "pending"))
-  return value
+  return fetchPendingReportsCountValue()
 }
 
 // "Revisado sin acción" — the admin looked and decided the report doesn't
@@ -231,4 +142,14 @@ export async function dismissReport(reportId: string): Promise<{ success: boolea
     .where(eq(messageReports.id, reportId))
 
   return { success: true }
+}
+
+// Etapa 6 — global block, independent of (and in addition to) a plate
+// owner's own per-plate block from Etapa 5. checkSendPermission() already
+// checks senders.isBlocked first, so this takes effect on every plate the
+// instant it's set, with nothing else to wire.
+export async function blockSender(senderId: string, blocked: boolean): Promise<{ success: boolean; error?: string }> {
+  const admin = await requireAdminEmail()
+  if (!admin.ok) return { success: false, error: "No autorizado" }
+  return blockSenderGlobally(senderId, blocked, admin.email)
 }
