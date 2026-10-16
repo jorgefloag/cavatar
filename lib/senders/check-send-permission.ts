@@ -9,7 +9,7 @@ const VERIFIED_HOURLY_CAP = 20
 export const SEND_RATE_LIMIT_ERROR = "Alcanzaste el límite de mensajes por hora. Probá de nuevo más tarde."
 
 export type SendPermissionResult =
-  | { allowed: true; remainingThisHour: number }
+  | { allowed: true; remainingThisHour: number; verified: boolean }
   | { allowed: false; reason: "blocked" }
   | { allowed: false; reason: "rate_limited" }
 
@@ -47,5 +47,9 @@ export async function checkSendPermission(sender: SenderDTO): Promise<SendPermis
 
   if (value >= cap) return { allowed: false, reason: "rate_limited" }
 
-  return { allowed: true, remainingThisHour: cap - value - 1 }
+  // `verified` is exposed here (not just used internally for the cap)
+  // specifically so the caller can skip Etapa 4's link/phone/email
+  // restriction for verified senders without a second verifiedRequests
+  // lookup — this query above already answers that question.
+  return { allowed: true, remainingThisHour: cap - value - 1, verified: Boolean(verifiedRow) }
 }

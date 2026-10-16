@@ -12,6 +12,7 @@ import { isNotificationCapped } from "@/lib/qstash/notification-window"
 import { sendPushNotificationIfNeeded } from "@/lib/push/send-push-notification"
 import { getOrCreateSender } from "@/lib/senders/get-or-create-sender"
 import { checkSendPermission, SEND_RATE_LIMIT_ERROR } from "@/lib/senders/check-send-permission"
+import { checkContactRestriction } from "@/lib/senders/validate-message-content"
 
 const messageSchema = z.object({
   plateNumber: z.string().trim().min(1).max(20).transform(normalizePlateNumber),
@@ -55,6 +56,21 @@ export async function submitMessage(
     // Blocked — identical success response to a real send, just with
     // nothing written and no side effects run. The sender is never told.
     return { success: true, remainingThisHour: 0 }
+  }
+
+  // Etapa 4 of the abuse plan — verified senders bypass this entirely.
+  // Checked before the insert below, so a rejection never writes a row and
+  // never counts against the hourly cap (that cap is derived from actual
+  // inserted messages, not attempts).
+  if (!permission.verified) {
+    const restriction = checkContactRestriction({
+      message: parsed.data.message,
+      alias: parsed.data.name,
+      contact: parsed.data.contact,
+    })
+    if (!restriction.allowed) {
+      return { success: false, error: restriction.error }
+    }
   }
 
   try {
