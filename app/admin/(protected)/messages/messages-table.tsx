@@ -27,6 +27,7 @@ import {
   deleteMessage,
   permanentlyDeleteMessage,
   dismissReport,
+  blockSender,
 } from "./actions"
 import type { MessagesPage } from "@/lib/admin/fetch-messages-with-sender"
 import type { ReportedMessageDTO } from "@/lib/admin/fetch-reported-messages"
@@ -57,6 +58,7 @@ export function MessagesTable({
   const [reportedMessages, setReportedMessages] = useState(initialReportedMessages)
   const [revealedReportIds, setRevealedReportIds] = useState<Set<string>>(new Set())
   const [reportActionId, setReportActionId] = useState<string | null>(null)
+  const [blockingSenderId, setBlockingSenderId] = useState<string | null>(null)
 
   const totalPages = Math.max(1, Math.ceil(result.totalCount / result.pageSize))
 
@@ -83,12 +85,13 @@ export function MessagesTable({
     try {
       const rows = await fetchAllMessagesForExport({ plate: appliedPlateFilter || undefined, includeDeleted })
       const csv = toCSV(
-        ["Placa", "Alias", "Mensaje", "Contacto", "Fecha", "Eliminado"],
+        ["Placa", "Alias", "Mensaje", "Contacto", "Remitente", "Fecha", "Eliminado"],
         rows.map((msg) => [
           msg.plateNumber,
           msg.isBroadcast ? "CAVATAR (Oficial)" : (msg.alias ?? ""),
           msg.message,
           msg.contact ?? "",
+          msg.isBroadcast ? "" : msg.senderDisplay,
           formatDateTimeCR(msg.createdAt),
           msg.deletedAt ? `Sí (${msg.deletedBy ?? "?"})` : "No",
         ]),
@@ -157,6 +160,25 @@ export function MessagesTable({
     setReportActionId(null)
   }
 
+  // Etapa 6 — global block. A sender can appear across several rows in
+  // both tabs (every message they ever sent, any plate), so on success
+  // this updates every matching row in both lists at once rather than just
+  // the one that was clicked.
+  const handleToggleBlock = async (senderId: string, blocked: boolean) => {
+    setBlockingSenderId(senderId)
+    const res = await blockSender(senderId, blocked)
+    if (res.success) {
+      setResult((prev) => ({
+        ...prev,
+        messages: prev.messages.map((m) => (m.senderId === senderId ? { ...m, senderBlocked: blocked } : m)),
+      }))
+      setReportedMessages((prev) =>
+        prev.map((r) => (r.reportedSenderId === senderId ? { ...r, senderBlocked: blocked } : r)),
+      )
+    }
+    setBlockingSenderId(null)
+  }
+
   return (
     <div>
       <div className="mb-6 flex gap-2">
@@ -186,6 +208,7 @@ export function MessagesTable({
                 <TableHead>Placa</TableHead>
                 <TableHead>Mensaje</TableHead>
                 <TableHead>Motivo</TableHead>
+                <TableHead>Remitente</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -210,6 +233,7 @@ export function MessagesTable({
                       )}
                     </TableCell>
                     <TableCell>{report.reason ?? "—"}</TableCell>
+                    <TableCell>{report.senderDisplay}</TableCell>
                     <TableCell>{formatDateTimeCR(report.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -221,6 +245,44 @@ export function MessagesTable({
                         >
                           Revisado
                         </Button>
+                        {report.reportedSenderId &&
+                          (report.senderBlocked ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={blockingSenderId === report.reportedSenderId}
+                              onClick={() => handleToggleBlock(report.reportedSenderId!, false)}
+                            >
+                              Desbloquear
+                            </Button>
+                          ) : (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={blockingSenderId === report.reportedSenderId}
+                                >
+                                  Bloquear remitente
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Bloquear a este remitente?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Es silencioso: {report.senderDisplay} nunca se entera. No va a poder escribirle a
+                                    ninguna placa de ahora en adelante — sus mensajes anteriores no cambian.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleToggleBlock(report.reportedSenderId!, true)}>
+                                    Bloquear
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          ))}
                         {report.messageId && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -252,7 +314,7 @@ export function MessagesTable({
               })}
               {reportedMessages.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     No hay reportes pendientes.
                   </TableCell>
                 </TableRow>
@@ -302,6 +364,7 @@ export function MessagesTable({
                   <TableHead>Alias</TableHead>
                   <TableHead>Mensaje</TableHead>
                   <TableHead>Contacto</TableHead>
+                  <TableHead>Remitente</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -328,9 +391,45 @@ export function MessagesTable({
                       )}
                     </TableCell>
                     <TableCell>{msg.contact ?? "—"}</TableCell>
+                    <TableCell>{msg.isBroadcast ? "—" : msg.senderDisplay}</TableCell>
                     <TableCell>{formatDateTimeCR(msg.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {!msg.isBroadcast &&
+                          msg.senderId &&
+                          (msg.senderBlocked ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={blockingSenderId === msg.senderId}
+                              onClick={() => handleToggleBlock(msg.senderId!, false)}
+                            >
+                              Desbloquear
+                            </Button>
+                          ) : (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive" disabled={blockingSenderId === msg.senderId}>
+                                  Bloquear
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Bloquear a este remitente?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Es silencioso: {msg.senderDisplay} nunca se entera. No va a poder escribirle a
+                                    ninguna placa de ahora en adelante — sus mensajes anteriores no cambian.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleToggleBlock(msg.senderId!, true)}>
+                                    Bloquear
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          ))}
                         {!msg.deletedAt && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -381,7 +480,7 @@ export function MessagesTable({
                 ))}
                 {result.messages.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       No hay mensajes que coincidan.
                     </TableCell>
                   </TableRow>
