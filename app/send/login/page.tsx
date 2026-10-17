@@ -7,7 +7,7 @@ import { useSignIn, useSignUp, useUser } from "@clerk/nextjs"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage, isIdentifierNotFoundError, getSignUpIncompleteMessage } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 import { isInAppBrowser } from "@/lib/browser/is-in-app-browser"
@@ -66,6 +66,26 @@ function SendLoginForm() {
   useEffect(() => {
     if (isSignedIn) router.replace(returnTo)
   }, [isSignedIn, returnTo, router])
+
+  // handleGoogle() below never resets isLoading on its success path — it
+  // navigates the browser away to Google instead. If the user hits "back"
+  // from there, the browser can restore this exact page from its
+  // back/forward cache (bfcache) rather than reloading it, which freezes
+  // React's state exactly as it was when the user left: isLoading stuck
+  // true, both buttons stuck disabled, forever, since bfcache restoration
+  // never re-runs mount effects. `pageshow`'s `event.persisted` is the one
+  // reliable signal that this happened (a fresh load never sets it true,
+  // and isLoading already starts false there anyway).
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setIsLoading(false)
+        setErrorMessage("")
+      }
+    }
+    window.addEventListener("pageshow", handlePageShow)
+    return () => window.removeEventListener("pageshow", handlePageShow)
+  }, [])
 
   const callbackUrl = `/send/login?returnTo=${encodeURIComponent(returnTo)}`
 
@@ -222,7 +242,7 @@ function SendLoginForm() {
           <p className="text-muted-foreground">
             {step === "form"
               ? "Para evitar abusos, pedimos verificar tu correo. El dueño de la placa nunca lo ve: solo ve un código tipo “Remitente 3”."
-              : `Te enviamos un código a ${email}.`}
+              : `Te enviamos un código de 6 dígitos a ${email}.`}
           </p>
         </div>
 
@@ -236,8 +256,14 @@ function SendLoginForm() {
                   size="lg"
                   onClick={handleGoogle}
                   disabled={isLoading}
-                  className="h-12 w-full rounded-lg text-base"
+                  className="h-12 w-full rounded-lg border-border bg-background text-base text-foreground"
                 >
+                  <svg viewBox="0 0 18 18" className="size-[18px]" aria-hidden="true">
+                    <path fill="#4285F4" d="M17.64 9.2045c0-.6381-.0573-1.2518-.1636-1.8409H9v3.4814h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9087c1.7018-1.5668 2.6836-3.8749 2.6836-6.615z" />
+                    <path fill="#34A853" d="M9 18c2.43 0 4.4673-.8059 5.9573-2.1818l-2.9087-2.2581c-.8059.54-1.8368.8591-3.0486.8591-2.3441 0-4.3282-1.5831-5.0359-3.7104H.9573v2.3318C2.4382 15.9832 5.4818 18 9 18z" />
+                    <path fill="#FBBC05" d="M3.9641 10.7098A5.4133 5.4133 0 0 1 3.6818 9c0-.5932.1023-1.1704.2823-1.7098V4.9584H.9573A8.9965 8.9965 0 0 0 0 9c0 1.4523.3477 2.8268.9573 4.0416l3.0068-2.3318z" />
+                    <path fill="#EA4335" d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.346l2.5813-2.5814C13.4632.8918 11.426 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9584l3.0068 2.3318C4.6718 5.1627 6.6559 3.5795 9 3.5795z" />
+                  </svg>
                   Continuar con Google
                 </Button>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -261,6 +287,7 @@ function SendLoginForm() {
                     required
                     className="h-12 rounded-lg text-base"
                   />
+                  <FieldDescription>Te enviamos un código de 6 dígitos.</FieldDescription>
                 </Field>
 
                 {errorMessage && <p className="text-center text-sm text-destructive">{errorMessage}</p>}
@@ -273,10 +300,10 @@ function SendLoginForm() {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={isLoading}
+                  disabled={isLoading || !email}
                   className="w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
                 >
-                  {isLoading ? "Enviando..." : "Enviar código"}
+                  {isLoading ? "Enviando..." : "Continuar con correo"}
                 </Button>
               </FieldGroup>
             </form>
