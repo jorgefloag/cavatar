@@ -29,7 +29,7 @@ export async function sendNewMessageNotificationEmail({
         <p><a href="${inboxUrl}">Ver mi buzón</a></p>
         ${
           reachedDailyCap
-            ? `<p>Alcanzaste el límite de avisos de hoy para esta placa. Si siguen llegando mensajes, no vas a recibir más correos hasta que pase la ventana de 24 horas — revisá tu buzón directamente acá: <a href="${inboxUrl}">Ver mi buzón</a></p>`
+            ? `<p>Alcanzaste el límite de avisos de hoy para esta placa. Si siguen llegando mensajes, no vas a recibir más correos hasta que pase la ventana de 24 horas.</p>`
             : ""
         }
       `,
