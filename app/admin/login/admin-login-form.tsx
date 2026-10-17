@@ -11,22 +11,18 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { getClerkErrorMessage, isIdentifierNotFoundError } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 
-// Etapa 3.5 — email-code is now the PRIMARY method, with password kept as a
-// secondary, explicitly-labeled fallback ("Entrar con contraseña") rather
-// than a direct swap like /verified/login got. This is deliberate and
-// temporary: Clerk Development already has password disabled as a first
-// factor (confirmed via the live, uncached /v1/environment response during
-// Etapa 3 testing), so the fallback only does anything in Production, and
-// only until "Sign-up with password" is turned off there too — see
-// CLAUDE.md's Auth section for the required deployment order. Remove the
-// password view entirely in a follow-up commit once that's confirmed live.
-type View = "code-form" | "code-verify" | "password-form" | "device"
+// Etapa 3.5 follow-up — the password view (and its "Entrar con
+// contraseña" fallback) is gone now that email-code is confirmed working
+// in Clerk Production and "Sign-up with password" is off there (see
+// CLAUDE.md's Auth section). Email-code is the only way in, same as every
+// other login page in this codebase.
+type View = "code-form" | "code-verify" | "device"
 
-// The code views have no password field in their own copy — overrides
-// getClerkErrorMessage()'s result if it ever mentions "contraseña" (e.g.
-// the shared form_identifier_not_found entry), so stale password-shaped
-// copy can't leak onto the code path. The password view is exempt: a
-// password-shaped error there is real and should be shown as-is.
+// This page has no password field anymore — overrides getClerkErrorMessage()'s
+// result if it ever mentions "contraseña" (e.g. the shared
+// form_identifier_not_found entry, written for the password-based flows
+// this migration replaced), so no stale password-shaped copy can leak
+// onto this page.
 function getCodeErrorMessage(error: unknown, fallback: string): { message: string; expected: boolean } {
   if (isIdentifierNotFoundError(error)) {
     return { message: "No encontramos una cuenta con este correo.", expected: true }
@@ -49,13 +45,8 @@ function AdminLoginFormInner() {
   const [infoMessage, setInfoMessage] = useState("")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
-  const [password, setPassword] = useState("")
   const [deviceCode, setDeviceCode] = useState("")
 
-  // Shared by both code and password paths: whatever just completed the
-  // first factor, check the resulting signIn.status the same way either
-  // way — "complete" finalizes, "needs_client_trust" moves to the device
-  // step, anything else is an unexpected-state error.
   const handleFirstFactorResult = async () => {
     if (signIn.status === "complete") {
       await finalizeAndRedirect(signIn, router, returnTo || "/admin")
@@ -133,30 +124,6 @@ function AdminLoginFormInner() {
     }
   }
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isLoading) return
-    setIsLoading(true)
-    setErrorMessage("")
-
-    try {
-      const { error } = await signIn.password({ emailAddress: email, password })
-      if (error) {
-        const { message, expected } = getClerkErrorMessage(error, "Correo o contraseña incorrectos.")
-        if (!expected) console.error("[admin/login] Password login error:", error)
-        setErrorMessage(message)
-        return
-      }
-      await handleFirstFactorResult()
-    } catch (error) {
-      const { message, expected } = getClerkErrorMessage(error, "Correo o contraseña incorrectos.")
-      if (!expected) console.error("[admin/login] Password login error:", error)
-      setErrorMessage(message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleVerifyDevice = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isLoading) return
@@ -208,19 +175,6 @@ function AdminLoginFormInner() {
     setCode("")
     setView("code-form")
     await signIn.reset()
-  }
-
-  // Switching between the code and password views mid-flow, before either
-  // has completed its first factor — reset() clears whatever in-progress
-  // signIn attempt the other view may have started, so the two can't step
-  // on each other's state.
-  const switchView = async (target: "code-form" | "password-form") => {
-    setErrorMessage("")
-    setInfoMessage("")
-    setCode("")
-    setPassword("")
-    await signIn.reset()
-    setView(target)
   }
 
   if (view === "device") {
@@ -375,73 +329,6 @@ function AdminLoginFormInner() {
               </Button>
             </FieldGroup>
           </form>
-        )}
-
-        {view === "password-form" && (
-          <form onSubmit={handlePasswordSubmit}>
-            <FieldGroup className="gap-6">
-              <Field>
-                <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                  required
-                  className="h-12 rounded-lg text-base"
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Tu contraseña"
-                  required
-                  className="h-12 rounded-lg text-base"
-                />
-              </Field>
-
-              {errorMessage && (
-                <p className="text-center text-sm text-destructive">{errorMessage}</p>
-              )}
-
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isLoading}
-                className="mt-4 w-full rounded-full bg-foreground px-8 py-6 text-base font-medium text-background shadow-lg transition-all hover:bg-foreground/90 hover:shadow-xl"
-              >
-                {isLoading ? "Ingresando..." : "Ingresar"}
-              </Button>
-            </FieldGroup>
-          </form>
-        )}
-
-        {view !== "code-verify" && (
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {view === "code-form" ? (
-              <button
-                type="button"
-                onClick={() => switchView("password-form")}
-                className="underline underline-offset-4 transition-colors hover:text-foreground"
-              >
-                Entrar con contraseña
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => switchView("code-form")}
-                className="underline underline-offset-4 transition-colors hover:text-foreground"
-              >
-                Entrar con código
-              </button>
-            )}
-          </p>
         )}
       </div>
     </main>
