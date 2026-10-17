@@ -32,9 +32,19 @@ function resolveSenderDisplay(input: {
     // e.g. an approved profile from before this field existed.
     return { name: input.businessName?.trim() || "Perfil verificado", isVerified: true }
   }
-  if (!input.aliasCode) return { name: "Remitente anterior", isVerified: false }
+  // A pre-Etapa-2 message (no aliasCode, since it predates per-plate
+  // aliasing) still gets the same "dice llamarse" treatment as a real
+  // "Remitente N" would — "Remitente anterior" is just the base label in
+  // place of a number, never a reason to drop whatever the sender actually
+  // typed back then. Fixed here because the original version silently
+  // discarded that free text for every historical message the moment this
+  // ships, which would have been a real, user-visible regression for
+  // existing plate owners (found during pre-push review, not caught by any
+  // test up to that point — nothing exercised a historical message with a
+  // real alias against the new display logic until then).
+  const baseLabel = input.aliasCode ?? "Remitente anterior"
   const trimmed = input.rawAlias?.trim()
-  return { name: trimmed ? `${input.aliasCode}, dice llamarse "${trimmed}"` : input.aliasCode, isVerified: false }
+  return { name: trimmed ? `${baseLabel}, dice llamarse "${trimmed}"` : baseLabel, isVerified: false }
 }
 
 export interface MessageDTO {
