@@ -342,8 +342,9 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
                 className="mt-0.5"
               />
               <Label htmlFor="acceptedPrivacy" className="text-sm font-normal text-muted-foreground">
-                Entiendo que mi mensaje (y el alias/contacto que incluya) será visible públicamente para quien
-                consulte esta placa, y acepto el{" "}
+                Entiendo que mi mensaje (y el alias o contacto que incluya) queda guardado en esta placa, que su
+                dueño podrá leerlo cuando reclame y configure su buzón, y que el equipo de CAVATAR puede revisarlo
+                para moderar. Acepto el{" "}
                 <a
                   href="/privacidad"
                   target="_blank"
