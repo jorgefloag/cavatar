@@ -274,6 +274,11 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
                 <BadgeCheck className="h-4 w-4" />
                 CAVATAR · Oficial
               </span>
+            ) : msg.isVerifiedSender ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                {msg.alias}
+                <BadgeCheck className="h-4 w-4 text-primary" />
+              </span>
             ) : (
               <span className="font-medium text-foreground">{msg.alias}</span>
             )}

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { approveVerifiedRequest, rejectVerifiedRequest, revokeVerifiedProfile } from "./actions"
+import { approveVerifiedRequest, rejectVerifiedRequest, revokeVerifiedProfile, setBusinessName } from "./actions"
 import type { VerifiedRequestAdminDTO } from "@/lib/admin/fetch-verified-requests"
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
@@ -43,6 +43,12 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
   const [search, setSearch] = useState("")
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [rowMessage, setRowMessage] = useState<Record<string, string>>({})
+  // Etapa 7 — editar el nombre comercial funciona antes O después de
+  // aprobar: antes de aprobar sirve para corregirlo si el aplicante lo
+  // escribió mal; después, es la ÚNICA forma de cambiarlo (el aplicante ya
+  // no puede, ver submitVerifiedRequest()).
+  const [editingBusinessNameId, setEditingBusinessNameId] = useState<string | null>(null)
+  const [businessNameDraft, setBusinessNameDraft] = useState("")
 
   const filtered = useMemo(() => {
     return requests.filter((req) => {
@@ -85,6 +91,21 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
     if (await runAction(id, revokeVerifiedProfile)) patchRequest(id, { status: "rejected" })
   }
 
+  const handleStartEditBusinessName = (req: VerifiedRequestAdminDTO) => {
+    setEditingBusinessNameId(req.id)
+    setBusinessNameDraft(req.businessName ?? "")
+  }
+  const handleSaveBusinessName = async (id: string) => {
+    setLoadingId(id)
+    const result = await setBusinessName(id, businessNameDraft)
+    setRowMessage((prev) => ({ ...prev, [id]: result.error || "" }))
+    if (result.success) {
+      patchRequest(id, { businessName: businessNameDraft.trim() })
+      setEditingBusinessNameId(null)
+    }
+    setLoadingId(null)
+  }
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -110,6 +131,7 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
             <TableRow>
               <TableHead>Correo</TableHead>
               <TableHead>Nombre</TableHead>
+              <TableHead>Nombre comercial</TableHead>
               <TableHead>Teléfono</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Creado</TableHead>
@@ -121,6 +143,33 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
               <TableRow key={req.id}>
                 <TableCell>{req.userEmail}</TableCell>
                 <TableCell>{req.fullName}</TableCell>
+                <TableCell>
+                  {editingBusinessNameId === req.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={businessNameDraft}
+                        onChange={(e) => setBusinessNameDraft(e.target.value)}
+                        className="h-9 w-40"
+                        autoFocus
+                      />
+                      <Button size="sm" disabled={loadingId === req.id} onClick={() => handleSaveBusinessName(req.id)}>
+                        Guardar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingBusinessNameId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className={req.businessName ? "font-medium text-foreground" : "text-muted-foreground"}>
+                        {req.businessName || "— sin definir —"}
+                      </span>
+                      <Button size="sm" variant="ghost" onClick={() => handleStartEditBusinessName(req)}>
+                        Editar
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>{req.phone}</TableCell>
                 <TableCell>
                   <Badge variant={statusVariants[req.status]}>{statusLabels[req.status]}</Badge>
@@ -175,7 +224,7 @@ export function VerifiedTable({ initialRequests }: { initialRequests: VerifiedRe
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   No hay solicitudes que coincidan.
                 </TableCell>
               </TableRow>

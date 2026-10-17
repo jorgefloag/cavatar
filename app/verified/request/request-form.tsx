@@ -8,14 +8,22 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
 import { submitVerifiedRequest } from "./actions"
+
+const ALREADY_VERIFIED_ERROR = "Tu perfil ya está verificado."
 
 export function RequestForm({ userEmail }: { userEmail: string }) {
   const [isSubmitted, setIsSubmitted] = useState(false)
+  // Separado de isSubmitted/errorMessage a propósito: esto no es un error
+  // (nada salió mal) ni un envío nuevo — es un estado informativo propio,
+  // con su propia pantalla, para que no se pierda como una línea roja más
+  // dentro del formulario.
+  const [isAlreadyVerified, setIsAlreadyVerified] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [fullName, setFullName] = useState("")
+  const [businessName, setBusinessName] = useState("")
   const [phone, setPhone] = useState("")
   const [useCase, setUseCase] = useState("")
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
@@ -26,19 +34,43 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
     setIsLoading(true)
     setErrorMessage("")
 
-    // Etapa 7, Parte 1 — businessName no tiene campo propio todavía (llega
-    // en la Parte 2, con su propio input y texto de ayuda); se reusa
-    // fullName como valor temporal solo para que el formulario real siga
-    // compilando y funcionando mientras tanto.
-    const result = await submitVerifiedRequest({ fullName, phone, useCase, businessName: fullName })
+    const result = await submitVerifiedRequest({ fullName, phone, useCase, businessName })
 
     setIsLoading(false)
 
     if (!result.success) {
-      setErrorMessage(result.error || "Error al enviar la solicitud. Intenta nuevamente.")
+      if (result.error === ALREADY_VERIFIED_ERROR) {
+        setIsAlreadyVerified(true)
+      } else {
+        setErrorMessage(result.error || "Error al enviar la solicitud. Intenta nuevamente.")
+      }
     } else {
       setIsSubmitted(true)
     }
+  }
+
+  if (isAlreadyVerified) {
+    return (
+      <main className="min-h-screen bg-background px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-md text-center">
+          <div className="mb-8 flex justify-center">
+            <CheckCircle2 className="h-16 w-16 text-foreground" strokeWidth={1.5} />
+          </div>
+          <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">{ALREADY_VERIFIED_ERROR}</h1>
+          <p className="mb-8 text-muted-foreground">
+            Ya tenés un perfil verificado aprobado. Si necesitás corregir tu nombre comercial, contactá al equipo de
+            CAVATAR.
+          </p>
+          <Button
+            asChild
+            variant="ghost"
+            className="rounded-full border border-border px-6 py-5 text-muted-foreground transition-all hover:border-foreground hover:text-foreground"
+          >
+            <Link href="/verified/dashboard">Ver estado de solicitud</Link>
+          </Button>
+        </div>
+      </main>
+    )
   }
 
   if (isSubmitted) {
@@ -99,6 +131,22 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
                 required
                 className="h-12 rounded-lg text-base"
               />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="businessName">Nombre comercial</FieldLabel>
+              <Input
+                id="businessName"
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Ej. Taller Mecánico Pérez"
+                required
+                className="h-12 rounded-lg text-base"
+              />
+              <FieldDescription>
+                Este nombre lo verán los dueños de placas cuando les escribas. El equipo lo revisa antes de aprobar.
+              </FieldDescription>
             </Field>
 
             <Field>
