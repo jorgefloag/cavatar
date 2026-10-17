@@ -32,7 +32,7 @@ export function DashboardView({
         return {
           icon: <AlertCircle className="h-16 w-16 text-muted-foreground" strokeWidth={1.5} />,
           title: "Aún no has enviado tu solicitud",
-          description: "Completa el formulario de solicitud para obtener un perfil verificado.",
+          description: "Completá el formulario de solicitud para obtener un perfil verificado.",
           action: (
             <Button
               asChild
@@ -54,7 +54,7 @@ export function DashboardView({
         return {
           icon: <CheckCircle2 className="h-16 w-16 text-foreground" strokeWidth={1.5} />,
           title: "Tu perfil fue aprobado",
-          description: "Felicidades. Ahora puedes enviar mensajes sin límite en CAVATAR.",
+          description: "Felicidades. Ahora podés enviar mensajes sin límite en CAVATAR.",
           action: (
             <Button
               asChild
@@ -69,7 +69,7 @@ export function DashboardView({
         return {
           icon: <XCircle className="h-16 w-16 text-muted-foreground" strokeWidth={1.5} />,
           title: "Tu perfil fue rechazado",
-          description: "Lo sentimos, tu solicitud no fue aprobada. Puedes contactarnos para más información.",
+          description: "Lo sentimos, tu solicitud no fue aprobada. Podés contactarnos para más información.",
           action: null,
         }
     }

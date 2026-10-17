@@ -25,7 +25,7 @@ export async function subscribeToPush(
 
   const result = await verifyClaimPassword(plate, password)
   if (!result.success) {
-    return { success: false, locked: result.locked, error: result.locked ? "Demasiados intentos. Intenta más tarde." : "Contraseña incorrecta." }
+    return { success: false, locked: result.locked, error: result.locked ? "Demasiados intentos. Intentá más tarde." : "Contraseña incorrecta." }
   }
 
   try {
@@ -59,7 +59,7 @@ export async function subscribeToPush(
     return { success: true }
   } catch (error) {
     console.error("[push] subscribeToPush error:", error)
-    return { success: false, error: "Error al activar los avisos. Intenta nuevamente." }
+    return { success: false, error: "Error al activar los avisos. Intentá nuevamente." }
   }
 }
 

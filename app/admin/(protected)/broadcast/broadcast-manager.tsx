@@ -373,7 +373,7 @@ export function BroadcastManager({
               }}
               maxLength={500}
               rows={4}
-              placeholder="Escribe el mensaje que verán todas las placas seleccionadas..."
+              placeholder="Escribí el mensaje que verán todas las placas seleccionadas..."
             />
             <p className="mt-1 text-right text-xs text-muted-foreground">{message.length}/500</p>
           </div>
@@ -392,7 +392,7 @@ export function BroadcastManager({
                 que nadie ya lo haya visto.
               </p>
               <Label htmlFor="broadcast-confirm" className="mb-1.5 block text-xs text-muted-foreground">
-                Escribe {previewCount} para confirmar
+                Escribí {previewCount} para confirmar
               </Label>
               <div className="flex flex-wrap gap-2">
                 <Input

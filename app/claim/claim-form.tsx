@@ -129,7 +129,7 @@ export function ClaimForm({
             Reclamar placa
           </h1>
           <p className="text-muted-foreground">
-            Completa el formulario para reclamar tu placa.
+            Completá el formulario para reclamar tu placa.
           </p>
         </div>
 
@@ -156,7 +156,7 @@ export function ClaimForm({
               <Step number={2} title="Pagá vía SINPE">
                 <div className="rounded-xl border border-border bg-muted/30 p-5">
                   <p className="text-2xl font-bold text-foreground">₡5,000 / año</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Activa tu buzón privado por 1 año.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Activá tu buzón privado por 1 año.</p>
 
                   {sinpePhoneNumber && (
                     <div className="mt-4">

@@ -6,21 +6,21 @@ const CLERK_ERROR_MESSAGES: Record<string, string> = {
   // qué correos están registrados.
   form_password_incorrect: "Correo o contraseña incorrectos.",
   form_identifier_not_found: "Correo o contraseña incorrectos.",
-  too_many_requests: "Demasiados intentos. Espera un momento y vuelve a intentar.",
+  too_many_requests: "Demasiados intentos. Esperá un momento y volvé a intentar.",
 
   // Registro (signUp.create)
-  form_identifier_exists: "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
-  form_password_pwned: "Esta contraseña fue expuesta en filtraciones de datos conocidas. Elige otra.",
-  form_password_not_strong_enough: "La contraseña no es lo suficientemente segura. Prueba con una más larga o menos común.",
+  form_identifier_exists: "Ya existe una cuenta con este correo. Intentá iniciar sesión.",
+  form_password_pwned: "Esta contraseña fue expuesta en filtraciones de datos conocidas. Elegí otra.",
+  form_password_not_strong_enough: "La contraseña no es lo suficientemente segura. Probá con una más larga o menos común.",
   form_password_length_too_short: "La contraseña es demasiado corta.",
   form_param_format_invalid: "El formato del correo no es válido.",
 
   // Verificación de código (signUp.attemptEmailAddressVerification)
-  form_code_incorrect: "Código incorrecto. Intenta de nuevo.",
-  verification_expired: "El código expiró. Vuelve a intentar el registro para recibir uno nuevo.",
+  form_code_incorrect: "Código incorrecto. Intentá de nuevo.",
+  verification_expired: "El código expiró. Volvé a intentar el registro para recibir uno nuevo.",
 
   // Ya hay una sesión activa (p. ej. sesión abierta en otro dispositivo)
-  session_exists: "Ya tienes una sesión activa. Cierra sesión antes de continuar.",
+  session_exists: "Ya tenés una sesión activa. Cerrá sesión antes de continuar.",
 }
 
 // La API de Signals ya no lanza excepciones para errores esperados: los

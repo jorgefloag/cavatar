@@ -361,7 +361,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               Consultar tu buzón
             </h1>
             <p className="text-muted-foreground">
-              Ingresa el número de placa para continuar.
+              Ingresá el número de placa para continuar.
             </p>
           </div>
 
@@ -412,7 +412,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
 
           <div className="mb-10">
             <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-              Ingresa tu clave de acceso
+              Ingresá tu clave de acceso
             </h1>
             <p className="text-muted-foreground">
               Para acceder al buzón de{" "}
@@ -449,7 +449,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
 
             {isBlocked && (
               <p className="text-sm text-destructive">
-                Demasiados intentos fallidos. Intenta nuevamente en unos minutos.
+                Demasiados intentos fallidos. Intentá nuevamente en unos minutos.
               </p>
             )}
 
@@ -496,7 +496,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               Tu placa fue aprobada
             </h2>
             <p className="mb-8 max-w-sm text-muted-foreground">
-              Revisa el correo con el que hiciste el reclamo para configurar tu acceso al buzón.
+              Revisá el correo con el que hiciste el reclamo para configurar tu acceso al buzón.
             </p>
             <Button
               variant="ghost"
@@ -625,7 +625,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
               </Button>
             </div>
             <p className="text-muted-foreground">
-              Revisa los mensajes enviados a tu placa{" "}
+              Revisá los mensajes enviados a tu placa{" "}
               <span className="font-plate text-foreground">{currentPlate}</span>
             </p>
           </div>
@@ -647,7 +647,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
-              <p className="text-muted-foreground">Aún no tienes mensajes.</p>
+              <p className="text-muted-foreground">Aún no tenés mensajes.</p>
             </div>
           ) : (
             (() => {
@@ -660,7 +660,7 @@ function InboxContentInner({ banner }: { banner: BannerDTO | null }) {
                   {activeMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
-                      <p className="text-muted-foreground">Aún no tienes mensajes.</p>
+                      <p className="text-muted-foreground">Aún no tenés mensajes.</p>
                     </div>
                   ) : (
                     activeMessages.map((msg, index) => renderMessageCard(msg, index === 0))

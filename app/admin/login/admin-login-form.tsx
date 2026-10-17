@@ -59,12 +59,12 @@ function AdminLoginFormInner() {
         setView("device")
       } else {
         console.error("[admin/login] needs_client_trust sin factor email_code disponible")
-        setErrorMessage("No se pudo verificar el dispositivo. Intenta nuevamente.")
+        setErrorMessage("No se pudo verificar el dispositivo. Intentá nuevamente.")
       }
       return
     }
     console.error("[admin/login] Sign-in attempt not complete:", signIn.status)
-    setErrorMessage("No se pudo iniciar sesión. Intenta nuevamente.")
+    setErrorMessage("No se pudo iniciar sesión. Intentá nuevamente.")
   }
 
   const handleRequestCode = async (e: React.FormEvent) => {
@@ -76,7 +76,7 @@ function AdminLoginFormInner() {
     try {
       const { error: createError } = await signIn.create({ identifier: email })
       if (createError) {
-        const { message, expected } = getCodeErrorMessage(createError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getCodeErrorMessage(createError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[admin/login] signIn create error:", createError)
         setErrorMessage(message)
         return
@@ -84,7 +84,7 @@ function AdminLoginFormInner() {
 
       const { error: sendError } = await signIn.emailCode.sendCode()
       if (sendError) {
-        const { message, expected } = getCodeErrorMessage(sendError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getCodeErrorMessage(sendError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[admin/login] send code error:", sendError)
         setErrorMessage(message)
         return
@@ -92,7 +92,7 @@ function AdminLoginFormInner() {
 
       setView("code-verify")
     } catch (error) {
-      const { message, expected } = getCodeErrorMessage(error, "No se pudo enviar el código. Intenta nuevamente.")
+      const { message, expected } = getCodeErrorMessage(error, "No se pudo enviar el código. Intentá nuevamente.")
       if (!expected) console.error("[admin/login] Request code error:", error)
       setErrorMessage(message)
     } finally {
@@ -109,14 +109,14 @@ function AdminLoginFormInner() {
     try {
       const { error } = await signIn.emailCode.verifyCode({ code })
       if (error) {
-        const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intentá nuevamente.")
         if (!expected) console.error("[admin/login] verify code error:", error)
         setErrorMessage(message)
         return
       }
       await handleFirstFactorResult()
     } catch (error) {
-      const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[admin/login] Verify code error:", error)
       setErrorMessage(message)
     } finally {
@@ -134,7 +134,7 @@ function AdminLoginFormInner() {
     try {
       const { error } = await signIn.mfa.verifyEmailCode({ code: deviceCode })
       if (error) {
-        const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intentá nuevamente.")
         if (!expected) console.error("[admin/login] Device verification error:", error)
         setErrorMessage(message)
         return
@@ -144,10 +144,10 @@ function AdminLoginFormInner() {
         await finalizeAndRedirect(signIn, router, returnTo || "/admin")
       } else {
         console.error("[admin/login] Sign-in attempt not complete after device verification:", signIn.status)
-        setErrorMessage("No se pudo verificar el dispositivo. Intenta nuevamente.")
+        setErrorMessage("No se pudo verificar el dispositivo. Intentá nuevamente.")
       }
     } catch (error) {
-      const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getCodeErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[admin/login] Device verification error:", error)
       setErrorMessage(message)
     } finally {
@@ -183,11 +183,11 @@ function AdminLoginFormInner() {
         <div className="mx-auto max-w-md">
           <div className="mb-10">
             <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-              Verifica tu dispositivo
+              Verificá tu dispositivo
             </h1>
             <p className="text-muted-foreground">
-              Es la primera vez que inicias sesión desde este dispositivo. Ingresa el código que te enviamos por
-              correo para confirmar que eres tú.
+              Es la primera vez que iniciás sesión desde este dispositivo. Ingresá el código que te enviamos por
+              correo para confirmar que sos vos.
             </p>
           </div>
 
@@ -262,7 +262,7 @@ function AdminLoginFormInner() {
             Acceso de administrador
           </h1>
           <p className="text-muted-foreground">
-            {view === "code-verify" ? `Te enviamos un código a ${email}.` : "Ingresa con tu cuenta de administrador."}
+            {view === "code-verify" ? `Te enviamos un código a ${email}.` : "Ingresá con tu cuenta de administrador."}
           </p>
         </div>
 

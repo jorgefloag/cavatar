@@ -42,7 +42,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
       if (result.error === ALREADY_VERIFIED_ERROR) {
         setIsAlreadyVerified(true)
       } else {
-        setErrorMessage(result.error || "Error al enviar la solicitud. Intenta nuevamente.")
+        setErrorMessage(result.error || "Error al enviar la solicitud. Intentá nuevamente.")
       }
     } else {
       setIsSubmitted(true)
@@ -114,7 +114,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
             Solicitar perfil verificado
           </h1>
           <p className="text-muted-foreground">
-            Completa el formulario para solicitar acceso a un perfil verificado.
+            Completá el formulario para solicitar acceso a un perfil verificado.
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export function RequestForm({ userEmail }: { userEmail: string }) {
                 id="useCase"
                 value={useCase}
                 onChange={(e) => setUseCase(e.target.value)}
-                placeholder="Describe cómo planeas usar el perfil verificado..."
+                placeholder="Describí cómo planeás usar el perfil verificado..."
                 required
                 rows={4}
                 className="rounded-lg text-base"

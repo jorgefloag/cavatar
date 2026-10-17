@@ -6,7 +6,7 @@ export function Explanation() {
           Cada placa es un buzón.
         </p>
         <p className="mt-4 text-balance text-2xl font-bold leading-tight text-foreground md:text-3xl lg:text-4xl">
-          Cualquier persona puede escribirle a tu vehículo. Y tú puedes escribirle a cualquier vehículo.
+          Cualquier persona puede escribirle a tu vehículo. Y vos podés escribirle a cualquier vehículo.
         </p>
 
         <div className="mt-10 flex justify-center">

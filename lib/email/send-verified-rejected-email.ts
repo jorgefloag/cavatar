@@ -14,7 +14,7 @@ export async function sendVerifiedRejectedEmail({
       subject: "Tu solicitud de perfil verificado fue rechazada",
       html: `
         <p>Tu solicitud de perfil verificado en CAVATAR fue rechazada.</p>
-        <p>Si crees que esto es un error o quieres enviarla de nuevo con información adicional, puedes volver a intentarlo aquí:</p>
+        <p>Si creés que esto es un error o querés enviarla de nuevo con información adicional, podés volver a intentarlo aquí:</p>
         <p><a href="${requestUrl}">${requestUrl}</a></p>
       `,
     })

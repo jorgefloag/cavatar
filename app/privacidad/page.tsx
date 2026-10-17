@@ -41,7 +41,7 @@ export default function PrivacidadPage() {
             <p>
               CAVATAR es un proyecto personal operado por Jorge Flores, con domicilio en Heredia, Costa Rica. Aún no
               está constituido como una sociedad formalmente registrada; esta sección se actualizará cuando eso
-              ocurra. Podés contactarnos en{" "}
+              ocurra. Puedes contactarnos en{" "}
               <a href="mailto:admin@cavatarcr.com" className="text-foreground underline underline-offset-4">
                 admin@cavatarcr.com
               </a>{" "}

@@ -4,14 +4,14 @@ import { Send, Inbox, ArrowRight } from "lucide-react"
 const features = [
   {
     icon: Send,
-    title: "ENVÍA",
-    description: "Escribe a cualquier placa.",
+    title: "ENVIÁ",
+    description: "Escribí a cualquier placa.",
     href: "/send",
   },
   {
     icon: Inbox,
-    title: "RECIBE",
-    description: "Reclama tu placa. Recibe mensajes.",
+    title: "RECIBÍ",
+    description: "Reclamá tu placa. Recibí mensajes.",
     href: "/inbox?focus=plate",
   },
 ]

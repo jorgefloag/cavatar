@@ -66,7 +66,7 @@ function ResetPasswordContent() {
       setPageState("success")
     } catch (error) {
       console.error("[inbox/reset-password] Error resetting password:", error)
-      setResetError("Error al cambiar la clave. Intenta de nuevo.")
+      setResetError("Error al cambiar la clave. Intentá de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
@@ -156,7 +156,7 @@ function ResetPasswordContent() {
 
         <div className="mb-10">
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-            Define tu nueva clave
+            Definí tu nueva clave
           </h1>
           <p className="text-muted-foreground">Elegí una clave nueva para tu buzón.</p>
         </div>
@@ -187,7 +187,7 @@ function ResetPasswordContent() {
               id="confirmPassword"
               type="password"
               autoComplete="new-password"
-              placeholder="Repite la clave"
+              placeholder="Repetí la clave"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

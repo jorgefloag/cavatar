@@ -127,7 +127,7 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
     setIsLoading(false)
 
     if (!result.success) {
-      setErrorMessage(result.error || "Error al enviar mensaje. Intenta nuevamente.")
+      setErrorMessage(result.error || "Error al enviar mensaje. Intentá nuevamente.")
       return
     }
 
@@ -226,7 +226,7 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
             Enviar mensaje
           </h1>
           <p className="text-muted-foreground">
-            Escribe la placa del vehículo y deja tu mensaje.
+            Escribí la placa del vehículo y dejá tu mensaje.
           </p>
         </div>
 
@@ -309,7 +309,7 @@ export function SendForm({ banner }: { banner: BannerDTO | null }) {
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, maxCharacters))}
-                placeholder="Escribe tu mensaje aquí..."
+                placeholder="Escribí tu mensaje aquí..."
                 required
                 rows={4}
                 className="rounded-lg text-base"

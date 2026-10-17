@@ -40,7 +40,7 @@ export function Hero() {
             ALGUIEN TE ESCRIBIÓ
           </h1>
           <p className="text-lg font-medium text-muted-foreground md:text-xl">
-            Ingresa tu placa para leer tus mensajes
+            Ingresá tu placa para leer tus mensajes
           </p>
         </div>
 
@@ -69,14 +69,14 @@ export function Hero() {
 
         {/* Tagline */}
         <p className="mb-10 text-sm text-muted-foreground">
-          Tienes una nueva alerta, un nuevo saludo, una nueva notificación, un nuevo recado... quizás hasta un nuevo
+          Tenés una nueva alerta, un nuevo saludo, una nueva notificación, un nuevo recado... quizás hasta un nuevo
           descuento o regalo, en el buzón de tu placa.
         </p>
 
         {/* Send Message Action - Equal visual prominence */}
         <div className="border-t border-border py-10">
           <p className="mb-4 text-lg font-medium text-muted-foreground">
-            O envía un mensaje a otra placa
+            O enviá un mensaje a otra placa
           </p>
           <Button
             asChild

@@ -28,7 +28,7 @@ export async function issueSetupToken({
   const result = await sendSetupEmail({ to: email, plateNumber, setupUrl })
 
   if (!result.success) {
-    return { success: true, warning: "El reclamo se actualizó, pero el correo no se pudo enviar. Usa 'Reenviar correo'." }
+    return { success: true, warning: "El reclamo se actualizó, pero el correo no se pudo enviar. Usá 'Reenviar correo'." }
   }
 
   return { success: true }

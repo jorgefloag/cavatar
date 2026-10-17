@@ -112,7 +112,7 @@ export async function submitMessage(
     return { success: true, remainingThisHour: permission.remainingThisHour }
   } catch (error) {
     console.error("[send] submitMessage error:", error)
-    return { success: false, error: "Error al enviar mensaje. Intenta nuevamente." }
+    return { success: false, error: "Error al enviar mensaje. Intentá nuevamente." }
   }
 }
 

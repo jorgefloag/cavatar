@@ -130,7 +130,7 @@ export function PushNotificationToggle({ plateNumber }: { plateNumber: string })
       setState("active")
     } catch (err) {
       console.error("[push] activation error:", err)
-      setError("Error al activar los avisos. Intenta nuevamente.")
+      setError("Error al activar los avisos. Intentá nuevamente.")
       setState("prompting-password")
     }
   }

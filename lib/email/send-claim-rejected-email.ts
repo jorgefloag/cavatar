@@ -16,7 +16,7 @@ export async function sendClaimRejectedEmail({
       subject: `Tu reclamo de la placa ${plateNumber} fue rechazado`,
       html: `
         <p>Tu reclamo de la placa <strong>${plateNumber}</strong> fue rechazado.</p>
-        <p>Si crees que esto es un error o quieres enviarlo de nuevo con información adicional, puedes volver a intentarlo aquí:</p>
+        <p>Si creés que esto es un error o querés enviarlo de nuevo con información adicional, podés volver a intentarlo aquí:</p>
         <p><a href="${claimUrl}">${claimUrl}</a></p>
       `,
     })

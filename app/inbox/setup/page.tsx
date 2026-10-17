@@ -68,7 +68,7 @@ function SetupContent() {
       setPageState("saved")
     } catch (error) {
       console.error("[inbox/setup] Error setting up password:", error)
-      setSetupError("Error al guardar la clave. Intenta de nuevo.")
+      setSetupError("Error al guardar la clave. Intentá de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
@@ -139,9 +139,9 @@ function SetupContent() {
 
           <div className="mb-10">
             <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-              Define tu clave de acceso
+              Definí tu clave de acceso
             </h1>
-            <p className="text-muted-foreground">Crea una clave para acceder a tu buzón.</p>
+            <p className="text-muted-foreground">Creá una clave para acceder a tu buzón.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -168,7 +168,7 @@ function SetupContent() {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Repite la clave"
+                placeholder="Repetí la clave"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -236,7 +236,7 @@ function SetupContent() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
-            <p className="text-muted-foreground">Aún no tienes mensajes.</p>
+            <p className="text-muted-foreground">Aún no tenés mensajes.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">

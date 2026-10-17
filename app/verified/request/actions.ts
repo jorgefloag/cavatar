@@ -50,6 +50,6 @@ export async function submitVerifiedRequest(
     return { success: true }
   } catch (error) {
     console.error("[verified/request] submitVerifiedRequest error:", error)
-    return { success: false, error: "Error al enviar la solicitud. Intenta nuevamente." }
+    return { success: false, error: "Error al enviar la solicitud. Intentá nuevamente." }
   }
 }

@@ -63,12 +63,12 @@ export async function uploadBanner(
 
   const file = formData.get("file")
   if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: "Selecciona una imagen." }
+    return { success: false, error: "Seleccioná una imagen." }
   }
 
   const extension = ALLOWED_TYPES[file.type]
   if (!extension) {
-    return { success: false, error: "Formato no soportado. Usa JPEG, PNG o WebP." }
+    return { success: false, error: "Formato no soportado. Usá JPEG, PNG o WebP." }
   }
 
   if (file.size > MAX_FILE_BYTES) {

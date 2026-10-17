@@ -85,7 +85,7 @@ export async function resendSetupEmail(id: string): Promise<{ success: boolean; 
     if (claim.setupTokenExpiresAt) {
       const issuedAt = claim.setupTokenExpiresAt.getTime() - TOKEN_TTL_MS
       if (Date.now() - issuedAt < RESEND_COOLDOWN_MS) {
-        return { success: false, error: "Espera un momento antes de reenviar." }
+        return { success: false, error: "Esperá un momento antes de reenviar." }
       }
     }
 

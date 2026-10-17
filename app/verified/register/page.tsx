@@ -34,7 +34,7 @@ function RegisterForm() {
     try {
       const { error } = await signUp.create({ emailAddress: email })
       if (error) {
-        const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
+        const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intentá nuevamente.")
         if (!expected) console.error("[verified/register] Registration error:", error)
         setErrorMessage(message)
         return
@@ -44,7 +44,7 @@ function RegisterForm() {
       if (sendResult.error) {
         const { message, expected } = getClerkErrorMessage(
           sendResult.error,
-          "Error al enviar el código de verificación. Intenta nuevamente.",
+          "Error al enviar el código de verificación. Intentá nuevamente.",
         )
         if (!expected) console.error("[verified/register] Send code error:", sendResult.error)
         setErrorMessage(message)
@@ -53,7 +53,7 @@ function RegisterForm() {
 
       setStep("verify")
     } catch (error) {
-      const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intenta nuevamente.")
+      const { message, expected } = getClerkErrorMessage(error, "Error al crear la cuenta. Intentá nuevamente.")
       if (!expected) console.error("[verified/register] Registration error:", error)
       setErrorMessage(message)
     } finally {
@@ -70,7 +70,7 @@ function RegisterForm() {
     try {
       const { error } = await signUp.verifications.verifyEmailCode({ code })
       if (error) {
-        const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intentá nuevamente.")
         if (!expected) console.error("[verified/register] Verification error:", error)
         setErrorMessage(message)
         return
@@ -80,10 +80,10 @@ function RegisterForm() {
         await finalizeAndRedirect(signUp, router, returnTo || "/verified/request")
       } else {
         console.error("[verified/register] Sign-up attempt not complete:", signUp.status, signUp.missingFields)
-        setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intenta nuevamente.")
+        setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intentá nuevamente.")
       }
     } catch (error) {
-      const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[verified/register] Verification error:", error)
       setErrorMessage(message)
     } finally {
@@ -106,12 +106,12 @@ function RegisterForm() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-            {step === "form" ? "Crear cuenta" : "Verifica tu correo"}
+            {step === "form" ? "Crear cuenta" : "Verificá tu correo"}
           </h1>
           <p className="text-muted-foreground">
             {step === "form"
-              ? "Crea una cuenta para solicitar un perfil verificado."
-              : `Ingresa el código que enviamos a ${email}.`}
+              ? "Creá una cuenta para solicitar un perfil verificado."
+              : `Ingresá el código que enviamos a ${email}.`}
           </p>
         </div>
 
@@ -213,7 +213,7 @@ function RegisterForm() {
         {/* Login link */}
         {step === "form" && (
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            ¿Ya tienes cuenta?{" "}
+            ¿Ya tenés cuenta?{" "}
             <Link
               href={returnTo ? `/verified/login?returnTo=${encodeURIComponent(returnTo)}` : "/verified/login"}
               className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"

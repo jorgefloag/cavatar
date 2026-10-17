@@ -59,7 +59,7 @@ function LoginForm() {
     try {
       const { error: createError } = await signIn.create({ identifier: email })
       if (createError) {
-        const { message, expected } = getLoginErrorMessage(createError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getLoginErrorMessage(createError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[verified/login] signIn create error:", createError)
         setErrorMessage(message)
         return
@@ -67,7 +67,7 @@ function LoginForm() {
 
       const { error: sendError } = await signIn.emailCode.sendCode()
       if (sendError) {
-        const { message, expected } = getLoginErrorMessage(sendError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getLoginErrorMessage(sendError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[verified/login] send code error:", sendError)
         setErrorMessage(message)
         return
@@ -75,7 +75,7 @@ function LoginForm() {
 
       setStep("verify")
     } catch (error) {
-      const { message, expected } = getLoginErrorMessage(error, "No se pudo enviar el código. Intenta nuevamente.")
+      const { message, expected } = getLoginErrorMessage(error, "No se pudo enviar el código. Intentá nuevamente.")
       if (!expected) console.error("[verified/login] Request code error:", error)
       setErrorMessage(message)
     } finally {
@@ -92,7 +92,7 @@ function LoginForm() {
     try {
       const { error } = await signIn.emailCode.verifyCode({ code })
       if (error) {
-        const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
         if (!expected) console.error("[verified/login] verify code error:", error)
         setErrorMessage(message)
         return
@@ -107,14 +107,14 @@ function LoginForm() {
           setStep("device")
         } else {
           console.error("[verified/login] needs_client_trust sin factor email_code disponible")
-          setErrorMessage("No se pudo verificar el dispositivo. Intenta nuevamente.")
+          setErrorMessage("No se pudo verificar el dispositivo. Intentá nuevamente.")
         }
       } else {
         console.error("[verified/login] signIn attempt not complete:", signIn.status)
-        setErrorMessage("Código inválido. Intenta nuevamente.")
+        setErrorMessage("Código inválido. Intentá nuevamente.")
       }
     } catch (error) {
-      const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[verified/login] Verify code error:", error)
       setErrorMessage(message)
     } finally {
@@ -132,7 +132,7 @@ function LoginForm() {
     try {
       const { error } = await signIn.mfa.verifyEmailCode({ code: deviceCode })
       if (error) {
-        const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+        const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
         if (!expected) console.error("[verified/login] Device verification error:", error)
         setErrorMessage(message)
         return
@@ -142,10 +142,10 @@ function LoginForm() {
         await finalizeAndRedirect(signIn, router, returnTo || "/verified/dashboard")
       } else {
         console.error("[verified/login] Sign-in attempt not complete after device verification:", signIn.status)
-        setErrorMessage("No se pudo verificar el dispositivo. Intenta nuevamente.")
+        setErrorMessage("No se pudo verificar el dispositivo. Intentá nuevamente.")
       }
     } catch (error) {
-      const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[verified/login] Device verification error:", error)
       setErrorMessage(message)
     } finally {
@@ -181,11 +181,11 @@ function LoginForm() {
         <div className="mx-auto max-w-md">
           <div className="mb-10">
             <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-              Verifica tu dispositivo
+              Verificá tu dispositivo
             </h1>
             <p className="text-muted-foreground">
-              Es la primera vez que inicias sesión desde este dispositivo. Ingresa el código que te enviamos por
-              correo para confirmar que eres tú.
+              Es la primera vez que iniciás sesión desde este dispositivo. Ingresá el código que te enviamos por
+              correo para confirmar que sos vos.
             </p>
           </div>
 
@@ -266,10 +266,10 @@ function LoginForm() {
 
         <div className="mb-10">
           <h1 className="mb-3 text-2xl font-bold text-foreground md:text-3xl">
-            {step === "form" ? "Iniciar sesión" : "Ingresa el código"}
+            {step === "form" ? "Iniciar sesión" : "Ingresá el código"}
           </h1>
           <p className="text-muted-foreground">
-            {step === "form" ? "Ingresa a tu cuenta de perfil verificado." : `Te enviamos un código a ${email}.`}
+            {step === "form" ? "Ingresá a tu cuenta de perfil verificado." : `Te enviamos un código a ${email}.`}
           </p>
         </div>
 

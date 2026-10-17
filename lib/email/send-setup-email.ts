@@ -13,12 +13,12 @@ export async function sendSetupEmail({
     const { error } = await resend.emails.send({
       from: EMAIL_FROM,
       to,
-      subject: `Configura el acceso a tu buzón de la placa ${plateNumber}`,
+      subject: `Configurá el acceso a tu buzón de la placa ${plateNumber}`,
       html: `
         <p>Tu reclamo de la placa <strong>${plateNumber}</strong> fue aprobado.</p>
-        <p>Para configurar la contraseña de acceso a tu buzón, entra a este enlace (válido por 48 horas, un solo uso):</p>
+        <p>Para configurar la contraseña de acceso a tu buzón, entrá a este enlace (válido por 48 horas, un solo uso):</p>
         <p><a href="${setupUrl}">${setupUrl}</a></p>
-        <p>Si no reconoces esta solicitud, ignora este correo.</p>
+        <p>Si no reconocés esta solicitud, ignorá este correo.</p>
       `,
     })
 

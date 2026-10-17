@@ -100,14 +100,14 @@ function SendLoginForm() {
         redirectCallbackUrl: callbackUrl,
       })
       if (error) {
-        const { message, expected } = getSendLoginErrorMessage(error, "No se pudo continuar con Google. Intenta nuevamente.")
+        const { message, expected } = getSendLoginErrorMessage(error, "No se pudo continuar con Google. Intentá nuevamente.")
         if (!expected) console.error("[send/login] Google sign-in error:", error)
         setErrorMessage(message)
         setIsLoading(false)
       }
       // On success this navigates away to Google — no further state update here.
     } catch (error) {
-      const { message, expected } = getSendLoginErrorMessage(error, "No se pudo continuar con Google. Intenta nuevamente.")
+      const { message, expected } = getSendLoginErrorMessage(error, "No se pudo continuar con Google. Intentá nuevamente.")
       if (!expected) console.error("[send/login] Google sign-in error:", error)
       setErrorMessage(message)
       setIsLoading(false)
@@ -125,7 +125,7 @@ function SendLoginForm() {
       if (!createError) {
         const { error: sendError } = await signIn.emailCode.sendCode()
         if (sendError) {
-          const { message, expected } = getSendLoginErrorMessage(sendError, "No se pudo enviar el código. Intenta nuevamente.")
+          const { message, expected } = getSendLoginErrorMessage(sendError, "No se pudo enviar el código. Intentá nuevamente.")
           if (!expected) console.error("[send/login] signIn send code error:", sendError)
           setErrorMessage(message)
           return
@@ -136,7 +136,7 @@ function SendLoginForm() {
       }
 
       if (!isIdentifierNotFoundError(createError)) {
-        const { message, expected } = getSendLoginErrorMessage(createError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getSendLoginErrorMessage(createError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[send/login] signIn create error:", createError)
         setErrorMessage(message)
         return
@@ -145,7 +145,7 @@ function SendLoginForm() {
       // No existe una cuenta con este correo — se registra una nueva.
       const { error: signUpError } = await signUp.create({ emailAddress: email })
       if (signUpError) {
-        const { message, expected } = getSendLoginErrorMessage(signUpError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getSendLoginErrorMessage(signUpError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[send/login] signUp create error:", signUpError)
         setErrorMessage(message)
         return
@@ -153,7 +153,7 @@ function SendLoginForm() {
 
       const { error: sendCodeError } = await signUp.verifications.sendEmailCode()
       if (sendCodeError) {
-        const { message, expected } = getSendLoginErrorMessage(sendCodeError, "No se pudo enviar el código. Intenta nuevamente.")
+        const { message, expected } = getSendLoginErrorMessage(sendCodeError, "No se pudo enviar el código. Intentá nuevamente.")
         if (!expected) console.error("[send/login] signUp send code error:", sendCodeError)
         setErrorMessage(message)
         return
@@ -162,7 +162,7 @@ function SendLoginForm() {
       setPending("signUp")
       setStep("verify")
     } catch (error) {
-      const { message, expected } = getSendLoginErrorMessage(error, "No se pudo enviar el código. Intenta nuevamente.")
+      const { message, expected } = getSendLoginErrorMessage(error, "No se pudo enviar el código. Intentá nuevamente.")
       if (!expected) console.error("[send/login] Request code error:", error)
       setErrorMessage(message)
     } finally {
@@ -180,7 +180,7 @@ function SendLoginForm() {
       if (pending === "signIn") {
         const { error } = await signIn.emailCode.verifyCode({ code })
         if (error) {
-          const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+          const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
           if (!expected) console.error("[send/login] signIn verify error:", error)
           setErrorMessage(message)
           return
@@ -189,12 +189,12 @@ function SendLoginForm() {
           await finalizeAndRedirect(signIn, router, returnTo)
         } else {
           console.error("[send/login] signIn attempt not complete:", signIn.status)
-          setErrorMessage("Código inválido. Intenta nuevamente.")
+          setErrorMessage("Código inválido. Intentá nuevamente.")
         }
       } else {
         const { error } = await signUp.verifications.verifyEmailCode({ code })
         if (error) {
-          const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+          const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
           if (!expected) console.error("[send/login] signUp verify error:", error)
           setErrorMessage(message)
           return
@@ -203,11 +203,11 @@ function SendLoginForm() {
           await finalizeAndRedirect(signUp, router, returnTo)
         } else {
           console.error("[send/login] signUp attempt not complete:", signUp.status, signUp.missingFields)
-          setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intenta nuevamente.")
+          setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intentá nuevamente.")
         }
       }
     } catch (error) {
-      const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intenta nuevamente.")
+      const { message, expected } = getSendLoginErrorMessage(error, "Código inválido. Intentá nuevamente.")
       if (!expected) console.error("[send/login] Verify code error:", error)
       setErrorMessage(message)
     } finally {

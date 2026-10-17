@@ -73,7 +73,7 @@ export function PlateSendersSection({ plateNumber }: { plateNumber: string }) {
           {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
 
           {!isLoading && senders?.length === 0 && (
-            <p className="text-sm text-muted-foreground">Todavía no tienes remitentes.</p>
+            <p className="text-sm text-muted-foreground">Todavía no tenés remitentes.</p>
           )}
 
           {senders?.map((sender) => (
