@@ -61,3 +61,38 @@ export function getClerkErrorMessage(
 export function isIdentifierNotFoundError(error: unknown): boolean {
   return isClerkAPIResponseError(error) && error.errors[0]?.code === "form_identifier_not_found"
 }
+
+// Found live in Clerk Production (2026-10-17): with "Sign-up with password"
+// still on there, `password` stayed in Clerk's own requiredFields even
+// though our sign-up screens never collect one — the email code verified
+// fine, but signUp.status came back "missing_requirements" instead of
+// "complete", and every call site's generic `else` branch blamed the code
+// itself ("Código inválido"), which was never the actual problem. Fixed
+// by turning off that toggle in Production (see CLAUDE.md), but this stays
+// as defense-in-depth for exactly the same shape of failure if anyone
+// flips it back, or if Clerk ever requires some other field we don't ask
+// for. Takes a plain {status, missingFields} shape — not the real SignUp
+// resource — specifically so it's testable with a plain object, no live
+// Clerk session needed. Returns null for "complete": that's not an error
+// at all, and no call site should reach this function for that status in
+// the first place (it's handled by its own branch beforehand) — null here
+// is a defensive, testable contract, not something meant to be shown.
+export function getSignUpIncompleteMessage(signUp: {
+  status: string
+  missingFields?: readonly string[]
+}): string | null {
+  if (signUp.status === "complete") return null
+
+  if (signUp.status === "missing_requirements") {
+    if (signUp.missingFields?.includes("password")) {
+      return "Tu registro quedó pendiente de un paso que esta pantalla no pide. Escribinos a hola@cavatarcr.com para que lo resolvamos."
+    }
+    return "El código es correcto, pero no pudimos completar tu registro. Escribinos a hola@cavatarcr.com."
+  }
+
+  if (signUp.status === "abandoned") {
+    return "Tu intento de registro venció. Volvé a intentarlo desde el principio."
+  }
+
+  return "No pudimos completar tu registro. Escribinos a hola@cavatarcr.com."
+}

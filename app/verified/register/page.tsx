@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { getClerkErrorMessage } from "@/lib/auth/clerk-error-message"
+import { getClerkErrorMessage, getSignUpIncompleteMessage } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 
 function RegisterForm() {
@@ -79,8 +79,8 @@ function RegisterForm() {
       if (signUp.status === "complete") {
         await finalizeAndRedirect(signUp, router, returnTo || "/verified/request")
       } else {
-        console.error("[verified/register] Sign-up attempt not complete:", signUp.status)
-        setErrorMessage("Código inválido. Intenta nuevamente.")
+        console.error("[verified/register] Sign-up attempt not complete:", signUp.status, signUp.missingFields)
+        setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intenta nuevamente.")
       }
     } catch (error) {
       const { message, expected } = getClerkErrorMessage(error, "Código inválido. Intenta nuevamente.")

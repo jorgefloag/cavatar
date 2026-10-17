@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { getClerkErrorMessage, isIdentifierNotFoundError } from "@/lib/auth/clerk-error-message"
+import { getClerkErrorMessage, isIdentifierNotFoundError, getSignUpIncompleteMessage } from "@/lib/auth/clerk-error-message"
 import { finalizeAndRedirect } from "@/lib/auth/finalize-and-redirect"
 import { isInAppBrowser } from "@/lib/browser/is-in-app-browser"
 
@@ -182,8 +182,8 @@ function SendLoginForm() {
         if (signUp.status === "complete") {
           await finalizeAndRedirect(signUp, router, returnTo)
         } else {
-          console.error("[send/login] signUp attempt not complete:", signUp.status)
-          setErrorMessage("Código inválido. Intenta nuevamente.")
+          console.error("[send/login] signUp attempt not complete:", signUp.status, signUp.missingFields)
+          setErrorMessage(getSignUpIncompleteMessage(signUp) ?? "Código inválido. Intenta nuevamente.")
         }
       }
     } catch (error) {
