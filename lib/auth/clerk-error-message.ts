@@ -85,14 +85,14 @@ export function getSignUpIncompleteMessage(signUp: {
 
   if (signUp.status === "missing_requirements") {
     if (signUp.missingFields?.includes("password")) {
-      return "Tu registro quedó pendiente de un paso que esta pantalla no pide. Escribinos a hola@cavatarcr.com para que lo resolvamos."
+      return "Tu registro quedó pendiente de un paso que esta pantalla no pide. Escribinos a admin@cavatarcr.com para que lo resolvamos."
     }
-    return "El código es correcto, pero no pudimos completar tu registro. Escribinos a hola@cavatarcr.com."
+    return "El código es correcto, pero no pudimos completar tu registro. Escribinos a admin@cavatarcr.com."
   }
 
   if (signUp.status === "abandoned") {
     return "Tu intento de registro venció. Volvé a intentarlo desde el principio."
   }
 
-  return "No pudimos completar tu registro. Escribinos a hola@cavatarcr.com."
+  return "No pudimos completar tu registro. Escribinos a admin@cavatarcr.com."
 }

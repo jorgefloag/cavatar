@@ -12,10 +12,10 @@ export function Footer() {
         {/* Contact */}
         <div className="mt-8">
           <a
-            href="mailto:hola@cavatarcr.com"
+            href="mailto:admin@cavatarcr.com"
             className="inline-block border-b-2 border-primary pb-1 font-label text-sm text-primary transition-all hover:brightness-110"
           >
-            hola@cavatarcr.com
+            admin@cavatarcr.com
           </a>
         </div>
 

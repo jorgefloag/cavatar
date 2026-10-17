@@ -146,7 +146,7 @@ export default function TerminosPage() {
               El proceso de reclamo depende de que un administrador verifique, fuera de la plataforma, que el correo
               proporcionado corresponde al dueño real del vehículo. CAVATAR no puede garantizar que todo reclamo
               aprobado sea legítimo — si crees que tu placa fue reclamada indebidamente, contáctanos de inmediato a
-              hola@cavatarcr.com.
+              admin@cavatarcr.com.
             </p>
             <p className="mt-3">
               Reclamar y mantener una placa activa en CAVATAR tiene un costo de ₡5,000 colones por año, pagadero
@@ -216,8 +216,8 @@ export default function TerminosPage() {
             <h2>13. Contacto</h2>
             <p>
               Para cualquier consulta sobre estos términos, escríbenos a{" "}
-              <a href="mailto:hola@cavatarcr.com" className="text-foreground underline underline-offset-4">
-                hola@cavatarcr.com
+              <a href="mailto:admin@cavatarcr.com" className="text-foreground underline underline-offset-4">
+                admin@cavatarcr.com
               </a>
               .
             </p>
