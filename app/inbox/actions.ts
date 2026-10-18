@@ -7,6 +7,7 @@ import { db } from "@/lib/db"
 import { claimRequests, messages, messageReports, plateSenderAliases, senders, verifiedRequests } from "@/lib/db/schema"
 import { normalizePlateNumber } from "@/lib/plates/normalize-plate"
 import { verifyClaimPassword } from "@/lib/claims/verify-claim-password"
+import { MIN_PASSWORD_LENGTH } from "@/lib/claims/password-policy"
 import { issueInboxSession } from "@/lib/inbox/session"
 import { formatDateCR } from "@/lib/dates/format-date"
 
@@ -119,8 +120,8 @@ export async function setupPasswordWithToken(
   token: string,
   newPassword: string,
 ): Promise<{ success: boolean; error?: string; plateNumber?: string }> {
-  if (newPassword.length < 6) {
-    return { success: false, error: "La clave debe tener al menos 6 caracteres" }
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { success: false, error: `La clave debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` }
   }
 
   const tokenHash = crypto.createHash("sha256").update(token.trim()).digest("hex")

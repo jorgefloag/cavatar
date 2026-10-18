@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { setupPasswordWithToken, validateSetupToken, verifyPlatePassword, type MessageDTO } from "@/app/inbox/actions"
+import { MIN_PASSWORD_LENGTH } from "@/lib/claims/password-policy"
 
 type PageState = "checking" | "invalid" | "form" | "saved" | "inbox"
 
@@ -48,8 +49,8 @@ function SetupContent() {
     e.preventDefault()
     setSetupError("")
 
-    if (newPassword.length < 6) {
-      setSetupError("La clave debe tener al menos 6 caracteres")
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setSetupError(`La clave debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -152,7 +153,7 @@ function SetupContent() {
               <Input
                 id="newPassword"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required

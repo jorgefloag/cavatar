@@ -12,6 +12,7 @@ import { issueSetupToken } from "@/lib/claims/issue-setup-token"
 import { isPasswordResetCapped, isPasswordResetWindowExpired } from "@/lib/claims/password-reset-window"
 import { sendPasswordChangedEmail } from "@/lib/email/send-password-changed-email"
 import { invalidateInboxSessions } from "@/lib/inbox/session"
+import { MIN_PASSWORD_LENGTH } from "@/lib/claims/password-policy"
 
 // Always the same response regardless of whether the plate exists, is
 // pending, awaiting_setup, or approved-with-password — never give the
@@ -98,8 +99,8 @@ export async function resetPasswordWithToken(
   token: string,
   newPassword: string,
 ): Promise<{ success: boolean; error?: string; plateNumber?: string; warning?: string }> {
-  if (newPassword.length < 6) {
-    return { success: false, error: "La clave debe tener al menos 6 caracteres" }
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { success: false, error: `La clave debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` }
   }
 
   const tokenHash = crypto.createHash("sha256").update(token.trim()).digest("hex")

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resetPasswordWithToken, validatePasswordResetToken } from "@/app/inbox/password-reset-actions"
+import { MIN_PASSWORD_LENGTH } from "@/lib/claims/password-policy"
 
 type PageState = "checking" | "invalid" | "form" | "success"
 
@@ -46,8 +47,8 @@ function ResetPasswordContent() {
     e.preventDefault()
     setResetError("")
 
-    if (newPassword.length < 6) {
-      setResetError("La clave debe tener al menos 6 caracteres")
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setResetError(`La clave debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -170,7 +171,7 @@ function ResetPasswordContent() {
               id="newPassword"
               type="password"
               autoComplete="new-password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
