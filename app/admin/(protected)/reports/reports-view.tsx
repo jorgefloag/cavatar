@@ -190,8 +190,8 @@ function OperationsSection({ report }: { report: OperationsReportDTO }) {
     const csv = toCSV(
       ["Estado", "Tiempo promedio (horas)", "Cantidad"],
       [
-        ["Total", report.overallAvgHours?.toFixed(2) ?? "", report.overallCount],
-        ...report.byStatus.map((row) => [statusLabels[row.status] ?? row.status, row.avgHours?.toFixed(2) ?? "", row.count]),
+        ["Total", report.overallAvgHours?.toFixed(2).replace(".", ",") ?? "", report.overallCount],
+        ...report.byStatus.map((row) => [statusLabels[row.status] ?? row.status, row.avgHours?.toFixed(2).replace(".", ",") ?? "", row.count]),
       ],
     )
     downloadCSV("operacion-panel-admin.csv", csv)
@@ -244,7 +244,7 @@ function RevenueSection({ report }: { report: RevenueReportDTO }) {
       [
         ["Placas activas", report.activePlatesCount],
         ["Ingreso anual estimado (colones)", report.estimatedAnnualRevenue],
-        ["Tasa de conversión (%)", conversionRate.toFixed(1)],
+        ["Tasa de conversión (%)", conversionRate.toFixed(1).replace(".", ",")],
         ...FUNNEL_ORDER.map((status) => [FUNNEL_LABELS[status], funnelByStatus.get(status) ?? 0]),
       ],
     )
