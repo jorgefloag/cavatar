@@ -14,7 +14,7 @@ export async function sendVerifiedApprovedEmail({
       subject: "Tu perfil verificado fue aprobado",
       html: `
         <p>Tu solicitud de perfil verificado en CAVATAR fue aprobada.</p>
-        <p>Ya podés iniciar sesión y enviar mensajes sin el límite de envíos anónimos:</p>
+        <p>Ya podés iniciar sesión y enviar hasta 20 mensajes por hora, con enlaces, correos y teléfonos incluidos:</p>
         <p><a href="${loginUrl}">${loginUrl}</a></p>
       `,
     })

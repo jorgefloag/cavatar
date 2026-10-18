@@ -12,7 +12,7 @@ export async function sendVerifiedRevokedEmail({
       subject: "Tu perfil verificado fue revocado",
       html: `
         <p>Un administrador revocó tu perfil verificado en CAVATAR.</p>
-        <p>Tus envíos volverán a estar sujetos al límite de mensajes anónimos.</p>
+        <p>Tu cuenta sigue activa, pero tus envíos vuelven al límite de 3 mensajes por hora y ya no podés incluir enlaces, correos ni teléfonos en tus mensajes. Si creés que fue un error, escribinos a admin@cavatarcr.com.</p>
       `,
     })
 
